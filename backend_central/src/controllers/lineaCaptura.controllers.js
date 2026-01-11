@@ -1,0 +1,17 @@
+export const getLineaCaptura = async (req, res) => {
+    const url = 'http://localhost/api/finanzas';
+    const { placa, motivosIds, idOficial, folioInfraccion } = req.body;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ placa, motivosIds, idOficial, folioInfraccion })
+        });
+        const data = await response.json();
+        res.json(data.linea_captura);
+    } catch (error) {
+        console.error('Error fetching línea de captura:', error);
+        res.status(500).json({ error: "Error al obtener la línea de captura" });
+    }
+}

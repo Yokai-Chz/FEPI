@@ -1,10 +1,12 @@
 import { pool } from "../db.js";
 import { createUbicacion } from "./ubicacion.controllers.js";
 import { getVehiculo } from "./vehiculos.controllers.js";
+import { createFolio } from "./folios.controllers.js";
+import { getLineaCaptura } from "./lineaCaptura.controllers.js";
 
 export const createInfraccion = async (req, res) => {
     try {
-        const { placa, niv, latitud, longitud, articulo_id, fecha_hora, descripcion, conductor_id, agente_id } = req.body;
+        const { placa, niv, latitud, longitud, articulo_id, fecha_hora, descripcion, conductor_id, agente_id, infracciones} = req.body;
 
         // Validamos que lleguen los datos del body
         if (!latitud || !longitud) {
@@ -15,32 +17,23 @@ export const createInfraccion = async (req, res) => {
             return res.status(400).json({ error: "Faltan placa o niv en el JSON" });
         }
 
-        // Obtenemos el id de la ubicación guardada en la base de datos
+        // Necesita: latitud , longitud
         const previewUbicacion = await createUbicacion(req, res);
-        if (!previewUbicacion) return; // createUbicacion ya manejó el error
+        if (!previewUbicacion) return; 
 
-        // Validamos si tiene reporte de robo
+        // Necesita: placa o niv
         const reporteVehiculo = await getVehiculo(req, res); 
-        if (!reporteVehiculo) return; // getVehiculo ya manejó el error
+        if (!reporteVehiculo) return; 
 
-        const query = `
-            INSERT INTO infracciones 
-            (articulo_id, fecha_hora, ubicacion_id, descripcion, placas, conductor_id, agente_id, tiene_reporte_robo) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
+        // Necesita: id_agente
+        const folioInfraccion = await createFolio(req, res);
+        if (!folioInfraccion) return;
 
-        const values = [
-            articulo_id,
-            fecha_hora || 'NOW()',
-            previewUbicacion, // ID retornado por createUbicacion
-            descripcion,
-            reporteVehiculo.placa || placa,
-            conductor_id,
-            agente_id,
-            reporteVehiculo.tieneReporteRobo
-        ];
+        // Necesita: placa, motivosIds(infracciones), id_agente, folioInfraccion
+        const lineaCaptura = await getLineaCaptura(req, res);
+        if (!lineaCaptura) return;
 
-        const result = await pool.query(query, values);
-        res.json(result.rows[0]);
+
 
     } catch (error) {
         console.error(error);

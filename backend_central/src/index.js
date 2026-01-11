@@ -2,7 +2,7 @@ import express from 'express';
 import  { PORT } from './config.js';
 import infraccionesRouter from './routes/infracciones.routes.js';
 import catalogosRouter from './routes/catalogo.routes.js';
-
+ 
 const app = express();
 
 app.use(express.json());
