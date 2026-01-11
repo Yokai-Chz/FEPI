@@ -1,2 +1,2 @@
 backend_central/node_modules/
-*.env
+backend_central/.env

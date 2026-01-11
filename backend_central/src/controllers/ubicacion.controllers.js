@@ -29,13 +29,34 @@ export const createUbicacion = async (req, res) => {
             coordenadas: `${latitud}, ${longitud}`
         };
 
-        // En lugar de hacer pool.query, solo retornamos el objeto
-        return datosParaDB;
+        const query = `
+            INSERT INTO ubicaciones (
+                nombre_vialidad, 
+                numero_exterior, 
+                nombre_asentamiento, 
+                codigo_postal, 
+                nombre_municipio, 
+                nombre_entidad, 
+                coordenadas
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
+
+        const values = [
+            datosParaDB.nombre_vialidad,
+            datosParaDB.numero_exterior,
+            datosParaDB.nombre_asentamiento,
+            datosParaDB.codigo_postal,
+            datosParaDB.nombre_municipio,
+            datosParaDB.nombre_entidad,
+            datosParaDB.coordenadas
+        ];
+
+        const result = await pool.query(query, values);
+        return result.rows[0].id;
 
     } catch (error) {
-        console.error("Error en Google API:", error.message);
+        console.error("Error en createUbicacion:", error.message);
         if (!res.headersSent) {
-            res.status(500).json({ error: "Error conectando con Google" });
+            res.status(500).json({ error: "Error al procesar la ubicación" });
         }
         return null;
     }
