@@ -3,19 +3,53 @@
 BEGIN;
 
 
-CREATE TABLE IF NOT EXISTS public."asociacionInfracciones"
+CREATE TABLE IF NOT EXISTS public.credencial
 (
-    "catalogoInfraccion" integer NOT NULL,
-    folio uuid NOT NULL
+    "numeroCredencial" bigint NOT NULL,
+    "fechaExpedicion" timestamp with time zone NOT NULL,
+    "fechaExpiracion" timestamp with time zone NOT NULL,
+    autoridad character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    emisor uuid NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
+    CONSTRAINT credencial_pkey PRIMARY KEY ("numeroCredencial")
 );
 
-CREATE TABLE IF NOT EXISTS public."catalogoInfracciones"
+CREATE TABLE IF NOT EXISTS public.personal
 (
-    "idCatalogo" serial NOT NULL,
-    "infraccionCometida" character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "fundamentoLegal" character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    uma double precision,
-    CONSTRAINT "catalogoInfracciones_pkey" PRIMARY KEY ("idCatalogo")
+    "idPersona" uuid NOT NULL,
+    nombre character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    "primerApellido" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    "segundoApellido" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    rfc character varying(13) COLLATE pg_catalog."default" NOT NULL,
+    "numeroLicenca" bigint NOT NULL,
+    cargo character varying(255) COLLATE pg_catalog."default",
+    borrado boolean NOT NULL DEFAULT false,
+    CONSTRAINT "idPersonal" PRIMARY KEY ("idPersona")
+);
+
+CREATE TABLE IF NOT EXISTS public."evidenciaArrastre"
+(
+    "idEvideciaArrastre" uuid NOT NULL,
+    "idEvidencia" uuid NOT NULL,
+    "personalGrua" uuid NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
+    CONSTRAINT "evidenciaArrastre_pkey" PRIMARY KEY ("idEvideciaArrastre")
+);
+
+CREATE TABLE IF NOT EXISTS public.evidencias
+(
+    "idEvicencia" uuid NOT NULL,
+    imagen bit(1),
+    borrado boolean NOT NULL DEFAULT false,
+    CONSTRAINT evidencias_pkey PRIMARY KEY ("idEvicencia")
+);
+
+CREATE TABLE IF NOT EXISTS public."asociacionEvidenciasInfracciones"
+(
+    evidencia uuid NOT NULL,
+    folio uuid NOT NULL,
+    borrado boolean,
+    CONSTRAINT "llavePrimaria" PRIMARY KEY (evidencia, folio)
 );
 
 CREATE TABLE IF NOT EXISTS public."folioInfracciones"
@@ -23,6 +57,7 @@ CREATE TABLE IF NOT EXISTS public."folioInfracciones"
     folio uuid NOT NULL,
     "idOficial" uuid,
     infraccion uuid,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT "folioInfracciones_pkey" PRIMARY KEY (folio)
 );
 
@@ -35,8 +70,12 @@ CREATE TABLE IF NOT EXISTS public.infracciones
     fecha timestamp with time zone NOT NULL DEFAULT now(),
     ubicacion uuid NOT NULL,
     conductor character varying(13) COLLATE pg_catalog."default" NOT NULL,
-    "emisorInfraccion" character varying(13) COLLATE pg_catalog."default" NOT NULL,
     "vehiculoInfraccionado" character varying(15) COLLATE pg_catalog."default",
+    "idOficial" uuid,
+    "domicillioInfractor" uuid NOT NULL,
+    "descripcionConducta" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    "licenciaInfractor" uuid,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT infracciones_pkey PRIMARY KEY ("idInfraccion")
 );
 
@@ -44,16 +83,13 @@ CREATE TABLE IF NOT EXISTS public.ubicacion
 (
     id uuid NOT NULL,
     municipio character varying(255) COLLATE pg_catalog."default",
-    colonia character varying(255) COLLATE pg_catalog."default",
-    calle character varying(255) COLLATE pg_catalog."default",
-    numero integer,
-    tramo character varying(255) COLLATE pg_catalog."default",
-    ruta character varying(255) COLLATE pg_catalog."default",
-    kilometro double precision,
-    clasificacioncarretera character varying(255) COLLATE pg_catalog."default",
-    manzanas double precision,
-    lotes double precision,
     location geography(Point,4326),
+    vialidad character varying(255) COLLATE pg_catalog."default",
+    "numeroExterior" character varying(50) COLLATE pg_catalog."default",
+    "nombreAsentamiento" character varying(255) COLLATE pg_catalog."default",
+    "codigoPostal" character varying(10) COLLATE pg_catalog."default",
+    "nombreEntidad" character varying(100) COLLATE pg_catalog."default",
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT ubicacion_pkey PRIMARY KEY (id)
 );
 
@@ -62,6 +98,7 @@ CREATE TABLE IF NOT EXISTS public.depositos
     "idDeposito" uuid NOT NULL,
     "idUbicacion" uuid NOT NULL,
     "capacidadMaxima" integer NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT depositos_pkey PRIMARY KEY ("idDeposito")
 );
 
@@ -74,6 +111,7 @@ CREATE TABLE IF NOT EXISTS public."registroDeposito"
     "rfcPropietario" character varying(13) COLLATE pg_catalog."default" NOT NULL,
     "fechaIngreso" timestamp with time zone NOT NULL,
     "fechaEgreso" timestamp with time zone,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT "registroDeposito_pkey" PRIMARY KEY ("idRegistro")
 );
 
@@ -82,6 +120,7 @@ CREATE TABLE IF NOT EXISTS public.gruas
     "idGrua" uuid NOT NULL,
     "idUbicacion" uuid NOT NULL,
     ocupado boolean NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT gruas_pkey PRIMARY KEY ("idGrua")
 );
 
@@ -92,6 +131,7 @@ CREATE TABLE IF NOT EXISTS public."registroArrastre"
     fecha timestamp with time zone NOT NULL,
     "ubicacionInicial" uuid NOT NULL,
     "ubicacionFinal" uuid NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT "registroArrastre_pkey" PRIMARY KEY ("idRegistro")
 );
 
@@ -99,51 +139,17 @@ CREATE TABLE IF NOT EXISTS public."asociacionEvidenciaArrastre"
 (
     "idEvidenciaArrstre" uuid NOT NULL,
     "idRegistroArrastre" uuid NOT NULL,
+    borrado boolean,
     CONSTRAINT "asociacionEvidenciaArrastre_pkey" PRIMARY KEY ("idEvidenciaArrstre", "idRegistroArrastre")
 );
 
-CREATE TABLE IF NOT EXISTS public."evidenciaArrastre"
+CREATE TABLE IF NOT EXISTS public."licenciaConducir"
 (
-    "idEvideciaArrastre" uuid NOT NULL,
-    "idEvidencia" uuid NOT NULL,
-    "personalGrua" uuid NOT NULL,
-    CONSTRAINT "evidenciaArrastre_pkey" PRIMARY KEY ("idEvideciaArrastre")
-);
-
-CREATE TABLE IF NOT EXISTS public.evidencias
-(
-    "idEvicencia" uuid NOT NULL,
-    imagen bit(1),
-    CONSTRAINT evidencias_pkey PRIMARY KEY ("idEvicencia")
-);
-
-CREATE TABLE IF NOT EXISTS public."asociacionEvidenciasInfracciones"
-(
-    evidencia uuid NOT NULL,
-    folio uuid NOT NULL,
-    CONSTRAINT "llavePrimaria" PRIMARY KEY (evidencia, folio)
-);
-
-CREATE TABLE IF NOT EXISTS public.personal
-(
-    "idPersona" uuid NOT NULL,
-    nombre character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "primerApellido" character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "segundoApellido" character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    rfc character varying(13) COLLATE pg_catalog."default" NOT NULL,
-    "numeroLicenca" bigint NOT NULL,
-    cargo character varying(255) COLLATE pg_catalog."default",
-    CONSTRAINT "idPersonal" PRIMARY KEY ("idPersona")
-);
-
-CREATE TABLE IF NOT EXISTS public.credencial
-(
-    "numeroCredencial" bigint NOT NULL,
-    "fechaExpedicion" timestamp with time zone NOT NULL,
-    "fechaExpiracion" timestamp with time zone NOT NULL,
-    autoridad character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    emisor uuid NOT NULL,
-    CONSTRAINT credencial_pkey PRIMARY KEY ("numeroCredencial")
+    "idLicencia" uuid NOT NULL,
+    tipo character varying(1) COLLATE pg_catalog."default" NOT NULL,
+    numero character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
+    CONSTRAINT "licenciaConducir_pkey" PRIMARY KEY ("idLicencia")
 );
 
 CREATE TABLE IF NOT EXISTS public.vehiculo
@@ -152,6 +158,7 @@ CREATE TABLE IF NOT EXISTS public.vehiculo
     modelo character varying(100) COLLATE pg_catalog."default" NOT NULL,
     marca character varying(100) COLLATE pg_catalog."default" NOT NULL,
     serie character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT vehiculo_pkey PRIMARY KEY (placa)
 );
 
@@ -164,7 +171,25 @@ CREATE TABLE IF NOT EXISTS public."datosVehiculoComercial"
     propietario character varying(13) COLLATE pg_catalog."default" NOT NULL,
     "cargaTransportada" character varying(255) COLLATE pg_catalog."default",
     folio uuid NOT NULL,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT "datosVehiculoComercial_pkey" PRIMARY KEY ("idDatosVehiculo")
+);
+
+CREATE TABLE IF NOT EXISTS public."asociacionInfracciones"
+(
+    "catalogoInfraccion" integer NOT NULL,
+    folio uuid NOT NULL,
+    borrado boolean
+);
+
+CREATE TABLE IF NOT EXISTS public."catalogoInfracciones"
+(
+    "idCatalogo" serial NOT NULL,
+    "infraccionCometida" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    "fundamentoLegal" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    uma double precision,
+    borrado boolean,
+    CONSTRAINT "catalogoInfracciones_pkey" PRIMARY KEY ("idCatalogo")
 );
 
 CREATE TABLE IF NOT EXISTS public."excesoDimension"
@@ -177,6 +202,7 @@ CREATE TABLE IF NOT EXISTS public."excesoDimension"
     "anchoAutorizado" real NOT NULL,
     "altoAutorizado" real NOT NULL,
     folio uuid,
+    borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT "excesoDimension_pkey" PRIMARY KEY ("idExcesoDim")
 );
 
@@ -184,22 +210,53 @@ CREATE TABLE IF NOT EXISTS public."excesoPeso"
 (
     "idExcesoPeso" uuid NOT NULL,
     folio uuid NOT NULL,
-    ejes smallint[] NOT NULL
+    ejes smallint[] NOT NULL,
+    borrado boolean NOT NULL DEFAULT false
 );
 
-ALTER TABLE IF EXISTS public."asociacionInfracciones"
-    ADD CONSTRAINT catalogo FOREIGN KEY ("catalogoInfraccion")
-    REFERENCES public."catalogoInfracciones" ("idCatalogo") MATCH SIMPLE
+ALTER TABLE IF EXISTS public.credencial
+    ADD CONSTRAINT emisor FOREIGN KEY (emisor)
+    REFERENCES public.personal ("idPersona") MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
 
 
-ALTER TABLE IF EXISTS public."asociacionInfracciones"
+ALTER TABLE IF EXISTS public."evidenciaArrastre"
+    ADD CONSTRAINT evidencia FOREIGN KEY ("idEvidencia")
+    REFERENCES public.evidencias ("idEvicencia") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public."evidenciaArrastre"
+    ADD CONSTRAINT personal FOREIGN KEY ("personalGrua")
+    REFERENCES public.personal ("idPersona") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public."asociacionEvidenciasInfracciones"
+    ADD CONSTRAINT evidencia FOREIGN KEY (evidencia)
+    REFERENCES public.evidencias ("idEvicencia") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public."asociacionEvidenciasInfracciones"
     ADD CONSTRAINT folio FOREIGN KEY (folio)
     REFERENCES public."folioInfracciones" (folio) MATCH SIMPLE
     ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public.infracciones
+    ADD CONSTRAINT "domicillioInfractor" FOREIGN KEY ("domicillioInfractor")
+    REFERENCES public.ubicacion (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
     ON DELETE NO ACTION
     NOT VALID;
+CREATE INDEX IF NOT EXISTS "fki_domicillioInfractor"
+    ON public.infracciones("domicillioInfractor");
 
 
 ALTER TABLE IF EXISTS public.infracciones
@@ -210,6 +267,26 @@ ALTER TABLE IF EXISTS public.infracciones
     NOT VALID;
 CREATE INDEX IF NOT EXISTS fki_folio
     ON public.infracciones("folioInfraccion");
+
+
+ALTER TABLE IF EXISTS public.infracciones
+    ADD CONSTRAINT "licenciaInfractor" FOREIGN KEY ("licenciaInfractor")
+    REFERENCES public."licenciaConducir" ("idLicencia") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX IF NOT EXISTS "fki_licenciaInfractor"
+    ON public.infracciones("licenciaInfractor");
+
+
+ALTER TABLE IF EXISTS public.infracciones
+    ADD CONSTRAINT oficial FOREIGN KEY ("idOficial")
+    REFERENCES public.personal ("idPersona") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX IF NOT EXISTS fki_oficial
+    ON public.infracciones("idOficial");
 
 
 ALTER TABLE IF EXISTS public.infracciones
@@ -292,41 +369,6 @@ ALTER TABLE IF EXISTS public."asociacionEvidenciaArrastre"
     ON DELETE NO ACTION;
 
 
-ALTER TABLE IF EXISTS public."evidenciaArrastre"
-    ADD CONSTRAINT evidencia FOREIGN KEY ("idEvidencia")
-    REFERENCES public.evidencias ("idEvicencia") MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public."evidenciaArrastre"
-    ADD CONSTRAINT personal FOREIGN KEY ("personalGrua")
-    REFERENCES public.personal ("idPersona") MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public."asociacionEvidenciasInfracciones"
-    ADD CONSTRAINT evidencia FOREIGN KEY (evidencia)
-    REFERENCES public.evidencias ("idEvicencia") MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public."asociacionEvidenciasInfracciones"
-    ADD CONSTRAINT folio FOREIGN KEY (folio)
-    REFERENCES public."folioInfracciones" (folio) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.credencial
-    ADD CONSTRAINT emisor FOREIGN KEY (emisor)
-    REFERENCES public.personal ("idPersona") MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
 ALTER TABLE IF EXISTS public."datosVehiculoComercial"
     ADD CONSTRAINT convertidor FOREIGN KEY (convertidor)
     REFERENCES public.vehiculo (placa) MATCH SIMPLE
@@ -346,6 +388,21 @@ ALTER TABLE IF EXISTS public."datosVehiculoComercial"
     REFERENCES public.vehiculo (placa) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public."asociacionInfracciones"
+    ADD CONSTRAINT catalogo FOREIGN KEY ("catalogoInfraccion")
+    REFERENCES public."catalogoInfracciones" ("idCatalogo") MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS public."asociacionInfracciones"
+    ADD CONSTRAINT folio FOREIGN KEY (folio)
+    REFERENCES public."folioInfracciones" (folio) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
 
 
 ALTER TABLE IF EXISTS public."excesoDimension"
