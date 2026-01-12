@@ -1,33 +1,86 @@
-import { pool } from "../db.js";
 import { createUbicacion } from "./ubicacion.controllers.js";
+import { getVehiculo } from "./vehiculos.controllers.js";
+import { getLineaCaptura } from "./lineaCaptura.controllers.js";
+import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
+import { pool } from "../db.js";
 
 export const createInfraccion = async (req, res) => {
     try {
-        const { latitud, longitud } = req.body;
+        const { fecha, latitud, longitud, placa, niv, id_agente, id_licencia, infracciones} = req.body;
 
         // Validamos que lleguen los datos del body
         if (!latitud || !longitud) {
             return res.status(400).json({ error: "Faltan latitud o longitud en el JSON" });
         }
 
-        // Obtenemos la previsualización de la ubicación
-        const previewUbicacion = await createUbicacion(req, res);
-
-        if (previewUbicacion) {
-            // Respondemos con lo que se enviaría a la base de datos
-            res.status(200).json({
-                mensaje: "Previsualización de datos lista (No se guardó en BD)",
-                datos_a_insertar: {
-                    ...previewUbicacion,
-                    // Aquí puedes agregar otros campos de la infracción que vengan en el body
-                    articulo_id: req.body.articulo_id || "Pendiente",
-                    placas: req.body.placas || "Pendiente"
-                }
-            });
+        if (!placa && !niv) {
+            return res.status(400).json({ error: "Faltan placa o niv en el JSON" });
         }
 
+        // Necesita: latitud , longitud
+        const ubicacion_id = await createUbicacion(req, res);
+        if (!ubicacion_id) return; 
+
+        // Necesita: placa o niv
+        const reporteVehiculo = await getVehiculo(req, res); 
+        if (!reporteVehiculo) return; 
+
+        const id_vehiculo = reporteVehiculo.placa || reporteVehiculo.niv;
+
+        const nuevaInfraccion = {
+            fecha, 
+            ubicacion: ubicacion_id, 
+            id_vehiculo, 
+            id_agente, 
+            id_licencia,
+        };
+
+        const query = `
+            INSERT INTO "infracciones" (
+                "fecha", 
+                "ubicacion", 
+                "vehiculo_infraccionado", 
+                "id_usuario", 
+                "licencia_infractor" 
+            ) VALUES ($1, $2, $3, $4, $5) RETURNING id_infraccion`;
+
+        const values = [
+            nuevaInfraccion.fecha,
+            nuevaInfraccion.ubicacion,
+            nuevaInfraccion.id_vehiculo,
+            nuevaInfraccion.id_agente,
+            nuevaInfraccion.id_licencia
+        ];
+
+        const response = await pool.query(query, values);
+        
+        const infraccion_id = response.rows[0].id_infraccion;
+
+        createAsociacionInfraccion(req, res, infraccion_id, infracciones);
+
+        const lineaCaptura = await getLineaCaptura(req, res, infraccion_id);
+
+        const queryLineaCaptura = `
+            UPDATE "infracciones" 
+            SET "linea_captura" = $1 
+            WHERE "id_infraccion" = $2
+        `;
+        const valuesLineaCaptura = [lineaCaptura, infraccion_id];
+
+        await pool.query(queryLineaCaptura, valuesLineaCaptura);
+
+        res.status(201).json({ 
+            mensaje: "Infracción creada exitosamente", 
+            id_infraccion: infraccion_id,
+            linea_captura: lineaCaptura
+        });
+        
+
     } catch (error) {
-        res.status(500).json({ error: "Error en el servidor de previsualización" });
+        console.error(error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error en el servidor al crear la infracción" });
+        }
     }
 }
 

@@ -2,7 +2,9 @@ import express from 'express';
 import  { PORT } from './config.js';
 import infraccionesRouter from './routes/infracciones.routes.js';
 import catalogosRouter from './routes/catalogo.routes.js';
-
+import userRoutes from './routes/user.routes.js';
+import authRoutes from './routes/auth.routes.js';
+ 
 const app = express();
 
 app.use(express.json());
@@ -13,6 +15,8 @@ app.get('/', (req, res) => {
 
 app.use(infraccionesRouter);
 app.use(catalogosRouter);
+app.use(userRoutes);
+app.use(authRoutes);
 
 
 app.listen(PORT, () => {

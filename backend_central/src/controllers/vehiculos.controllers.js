@@ -1,17 +1,33 @@
-import { pool } from "../db";
+import { API_REPUVE } from "../config.js";
 
-// La obtencion de vehiculos sera optenido mediante el metodo GET a la api http://localhost:3000/api/repuve 
-export const getVehiculo = (req, res) => {
-    const url = "http://localhost:3000/api/repuve";
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            res.json(data);
-        })
-        .catch(error => {
-            res.status(500).json({ error: "Error fetching vehiculos data" });
+export const getVehiculo = async (req, res) => {
+    const { placa, niv } = req.body;
+    const url = `${API_REPUVE}/${placa || niv}`;
+    
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
         });
-}
 
-// La creacion de vehiculos sera mediante el metodo POST a la api http://localhost:3000/api/repuve const createVehiculo = (req, res) => {
+        const data = await response.json();
+        
+        if ((!data.placa && !data.niv)) {
+            res.status(404).json({ error: "Vehículo no encontrado en REPUVE" });
+            return null;
+        }
+
+        return {
+            placa: data.placa,
+            niv: data.niv,
+            tieneReporteRobo: data.tiene_reporte_robo
+        };
+
+    } catch (error) {
+        console.error("Error al obtener el vehículo:", error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error al obtener el vehículo" });
+        }
+        return null;
+    }
+}

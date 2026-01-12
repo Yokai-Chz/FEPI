@@ -17,6 +17,8 @@ export const createUbicacion = async (req, res) => {
 
         const components = googleResponse.data.results[0].address_components;
         const getComp = (type) => components.find(c => c.types.includes(type))?.long_name || '';
+        const id = `${latitud}-${longitud}-${Date.now()}`;
+
 
         // Objeto que se enviaría a la DB
         const datosParaDB = {
@@ -29,13 +31,36 @@ export const createUbicacion = async (req, res) => {
             coordenadas: `${latitud}, ${longitud}`
         };
 
-        // En lugar de hacer pool.query, solo retornamos el objeto
-        return datosParaDB;
+
+        const query = `
+            INSERT INTO ubicacion (
+                "vialidad", 
+                "numero_exterior", 
+                "nombre_asentamiento", 
+                "codigo_postal", 
+                "municipio", 
+                "nombre_entidad", 
+                "coordenadas"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_ubicacion`;
+
+        const values = [
+            datosParaDB.nombre_vialidad,
+            datosParaDB.numero_exterior,
+            datosParaDB.nombre_asentamiento,
+            datosParaDB.codigo_postal,
+            datosParaDB.nombre_municipio,
+            datosParaDB.nombre_entidad,
+            datosParaDB.coordenadas
+        ];
+
+        const result = await pool.query(query, values);
+        
+        return result.rows[0].id_ubicacion;
 
     } catch (error) {
-        console.error("Error en Google API:", error.message);
+        console.error("Error en createUbicacion:", error.message);
         if (!res.headersSent) {
-            res.status(500).json({ error: "Error conectando con Google" });
+            res.status(500).json({ error: "Error al procesar la ubicación" });
         }
         return null;
     }

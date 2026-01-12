@@ -1,0 +1,12 @@
+services:
+  mock-server:
+    build: .
+    container_name: mock_server_container
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Command to run with reload for development
+    command: sh -c "python populate_db.py && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
