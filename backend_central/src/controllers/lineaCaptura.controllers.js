@@ -1,4 +1,4 @@
-import { API_FINANZAS } from "../config";
+import { API_FINANZAS } from "../config.js";
 
 export const getLineaCaptura = async (req, res) => {
     const url = API_FINANZAS;

@@ -1,4 +1,4 @@
-import { API_REPUVE } from "../config";
+import { API_REPUVE } from "../config.js";
 
 export const getVehiculo = async (req, res) => {
     const { placa, niv } = req.body;
