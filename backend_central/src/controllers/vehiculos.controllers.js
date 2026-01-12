@@ -1,8 +1,8 @@
-import { pool } from "../db.js";
+import { API_REPUVE } from "../config";
 
 export const getVehiculo = async (req, res) => {
     const { placa, niv } = req.body;
-    const url = "http://localhost:3000/api/repuve";
+    const url = API_REPUVE;
 
     try {
         const response = await fetch(url, {

@@ -1,7 +1,12 @@
-export const getLineaCaptura = async (req, res) => {
-    const url = 'http://localhost/api/finanzas';
-    const { placa, motivosIds, idOficial, folioInfraccion } = req.body;
+import { API_FINANZAS } from "../config";
 
+export const getLineaCaptura = async (req, res) => {
+    const url = API_FINANZAS;
+    const { placa, infracciones, id_agente, folioInfraccion } = req.body;
+
+    const motivosIds = infracciones; 
+    const idOficial = id_agente;
+    
     try {
         const response = await fetch(url, {
             method: "POST",
