@@ -17,6 +17,8 @@ export const createUbicacion = async (req, res) => {
 
         const components = googleResponse.data.results[0].address_components;
         const getComp = (type) => components.find(c => c.types.includes(type))?.long_name || '';
+        const id = `${latitud}-${longitud}-${Date.now()}`;
+
 
         // Objeto que se enviaría a la DB
         const datosParaDB = {
@@ -29,14 +31,15 @@ export const createUbicacion = async (req, res) => {
             coordenadas: `${latitud}, ${longitud}`
         };
 
+
         const query = `
-            INSERT INTO ubicaciones (
-                nombre_vialidad, 
-                numero_exterior, 
-                nombre_asentamiento, 
-                codigo_postal, 
-                nombre_municipio, 
-                nombre_entidad, 
+            INSERT INTO ubicacion (
+                vialidad, 
+                "numeroExterior", 
+                "nombreAsentamiento", 
+                "codigoPostal", 
+                municipio, 
+                "nombreEntidad", 
                 coordenadas
             ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
 

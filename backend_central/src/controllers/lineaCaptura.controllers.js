@@ -10,10 +10,12 @@ export const getLineaCaptura = async (req, res) => {
     try {
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+                        'Authorization': 'Bearer SSC_TOKEN_2026'},
             body: JSON.stringify({ placa, motivosIds, idOficial, folioInfraccion })
         });
         const data = await response.json();
+        console.log(data);
         res.json(data.linea_captura);
     } catch (error) {
         console.error('Error fetching línea de captura:', error);
