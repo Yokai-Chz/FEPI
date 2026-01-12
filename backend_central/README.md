@@ -162,18 +162,6 @@ Crea una nueva infracción. Este endpoint internamente gestiona la ubicación, e
     -   **Código 500:** `{"error": "Error en el servidor al crear la infracción"}`
 
 
-#### `GET /infracciones`
-
-Obtiene la lista de infracciones. **(Funcionalidad no implementada)**
-
--   **Respuesta Actual (Código 200):**
-    ```json
-    {
-        "mensaje": "Aquí se listarían las infracciones (Funcionalidad no implementada aún)"
-    }
-    ```
----
-
 ### Catálogo
 
 #### `GET /catalogo`
