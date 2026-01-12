@@ -1,12 +1,12 @@
 import { createUbicacion } from "./ubicacion.controllers.js";
 import { getVehiculo } from "./vehiculos.controllers.js";
-import { createFolio } from "./folios.controllers.js";
 import { getLineaCaptura } from "./lineaCaptura.controllers.js";
+import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
 import { pool } from "../db.js";
 
 export const createInfraccion = async (req, res) => {
     try {
-        const { fecha, latitud, longitud, placa, niv, id_agente, id_licencia, descripcion, infracciones} = req.body;
+        const { fecha, latitud, longitud, placa, niv, id_agente, id_licencia, infracciones} = req.body;
 
         // Validamos que lleguen los datos del body
         if (!latitud || !longitud) {
@@ -26,54 +26,55 @@ export const createInfraccion = async (req, res) => {
         if (!reporteVehiculo) return; 
 
         const id_vehiculo = reporteVehiculo.placa || reporteVehiculo.niv;
-        
-        // Necesita: id_agente
-        const folioInfraccion = await createFolio(req, res);
-        if (!folioInfraccion) return;
-
-        const newFolio = folioInfraccion.folioInfraccion;
-        const idOficial = folioInfraccion.idOficial;
-
-        // Necesita: placa, motivosIds(infracciones), id_agente, folioInfraccion
-        const lineaCaptura = await getLineaCaptura(req, res, folioInfraccion);
-        if (!lineaCaptura) return;
 
         const nuevaInfraccion = {
-            folioInfraccion: newFolio,
-            lineaCaptura,
-            fecha,
-            ubicacion: ubicacion_id,
-            id_vehiculo,
-            id_agente: idOficial,
-            descripcion,
+            fecha, 
+            ubicacion: ubicacion_id, 
+            id_vehiculo, 
+            id_agente, 
+            id_licencia,
         };
 
         const query = `
             INSERT INTO "infracciones" (
-                "folioInfraccion", 
-                "lineaCaptura", 
-                fecha, 
-                ubicacion, 
-                "vehiculoInfraccionado", 
-                "idOficial", 
-                "descripcionConducta" 
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+                "fecha", 
+                "ubicacion", 
+                "vehiculo_infraccionado", 
+                "id_usuario", 
+                "licencia_infractor" 
+            ) VALUES ($1, $2, $3, $4, $5) RETURNING id_infraccion`;
 
         const values = [
-            nuevaInfraccion.folioInfraccion,
-            nuevaInfraccion.lineaCaptura,
             nuevaInfraccion.fecha,
             nuevaInfraccion.ubicacion,
             nuevaInfraccion.id_vehiculo,
             nuevaInfraccion.id_agente,
-            nuevaInfraccion.descripcion
+            nuevaInfraccion.id_licencia
         ];
 
-        console.log("Nueva infracción a guardar:", nuevaInfraccion);
-
-        pool.query(query, values);
+        const response = await pool.query(query, values);
         
-        res.status(201).json({ mensaje: "Infracción creada exitosamente", infraccion: nuevaInfraccion });
+        const infraccion_id = response.rows[0].id_infraccion;
+
+        createAsociacionInfraccion(req, res, infraccion_id, infracciones);
+
+        const lineaCaptura = await getLineaCaptura(req, res, infraccion_id);
+
+        const queryLineaCaptura = `
+            UPDATE "infracciones" 
+            SET "linea_captura" = $1 
+            WHERE "id_infraccion" = $2
+        `;
+        const valuesLineaCaptura = [lineaCaptura, infraccion_id];
+
+        await pool.query(queryLineaCaptura, valuesLineaCaptura);
+
+        res.status(201).json({ 
+            mensaje: "Infracción creada exitosamente", 
+            id_infraccion: infraccion_id,
+            linea_captura: lineaCaptura
+        });
+        
 
     } catch (error) {
         console.error(error);

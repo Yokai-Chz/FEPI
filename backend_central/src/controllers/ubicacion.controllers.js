@@ -34,14 +34,14 @@ export const createUbicacion = async (req, res) => {
 
         const query = `
             INSERT INTO ubicacion (
-                vialidad, 
-                "numeroExterior", 
-                "nombreAsentamiento", 
-                "codigoPostal", 
-                municipio, 
-                "nombreEntidad", 
-                coordenadas
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
+                "vialidad", 
+                "numero_exterior", 
+                "nombre_asentamiento", 
+                "codigo_postal", 
+                "municipio", 
+                "nombre_entidad", 
+                "coordenadas"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_ubicacion`;
 
         const values = [
             datosParaDB.nombre_vialidad,
@@ -54,7 +54,8 @@ export const createUbicacion = async (req, res) => {
         ];
 
         const result = await pool.query(query, values);
-        return result.rows[0].id;
+        
+        return result.rows[0].id_ubicacion;
 
     } catch (error) {
         console.error("Error en createUbicacion:", error.message);
