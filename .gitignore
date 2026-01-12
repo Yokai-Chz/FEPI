@@ -1,2 +1,4 @@
 backend_central/node_modules/
 backend_central/.env
+backend_central/.vscode
+backend_externo/mockServer/mock_data.db
