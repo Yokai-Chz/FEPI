@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import sys
@@ -90,3 +91,47 @@ async def consultar_licencia(numero_licencia: str):
         "fecha_vencimiento": row["fecha_vencimiento"]
     }
 
+
+@router.get("/getPlacaAll",response_model=List[VehiculoSemoviResponse])
+async def getPlacaAll():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = '''
+        SELECT v.placa, v.marca, v.modelo, v.color, v.anio, 
+               tc.folio as tc_folio, tc.vigencia as tc_vigencia, tc.estatus as tc_estatus,
+               p.nombre_completo, p.rfc, p.domicilio_fiscal
+        FROM vehiculos v
+        JOIN tarjetas_circulacion tc ON v.placa = tc.placa
+        JOIN propietarios p ON tc.rfc_propietario = p.rfc
+    '''
+    
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    if not rows:
+        return []
+
+    # Construimos la lista de objetos siguiendo la estructura de tu modelo
+    vehiculos = []
+    for row in rows:
+        vehiculos.append({
+            "placa": row["placa"],
+            "marca": row["marca"],
+            "modelo": row["modelo"],
+            "color": row["color"],
+            "anio": row["anio"],
+            "tarjeta_circulacion": {
+                "folio": row["tc_folio"],
+                "vigencia": row["tc_vigencia"],
+                "estatus": row["tc_estatus"]
+            },
+            "propietario": {
+                "nombre_completo": row["nombre_completo"],
+                "rfc": row["rfc"],
+                "domicilio_fiscal": row["domicilio_fiscal"]
+            }
+        })
+    
+    return vehiculos
