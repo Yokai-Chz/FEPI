@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public."asociacionEvidenciasInfracciones"
 
 CREATE TABLE IF NOT EXISTS public."folioInfracciones"
 (
-    folio uuid NOT NULL,
+    folio uuid NOT NULL DEFAULT gen_random_uuid(),
     "idOficial" uuid,
     infraccion uuid,
     borrado boolean NOT NULL DEFAULT false,
@@ -63,17 +63,17 @@ CREATE TABLE IF NOT EXISTS public."folioInfracciones"
 
 CREATE TABLE IF NOT EXISTS public.infracciones
 (
-    "idInfraccion" uuid NOT NULL,
+    "idInfraccion" uuid NOT NULL DEFAULT gen_random_uuid(),
     version smallint NOT NULL DEFAULT 0,
     "folioInfraccion" uuid NOT NULL,
-    "lineaCaptura" uuid,
+    "lineaCaptura" character varying(255) COLLATE pg_catalog."default" NOT NULL,
     fecha timestamp with time zone NOT NULL DEFAULT now(),
     ubicacion uuid NOT NULL,
-    conductor character varying(13) COLLATE pg_catalog."default" NOT NULL,
+    conductor character varying(13) COLLATE pg_catalog."default",
     "vehiculoInfraccionado" character varying(15) COLLATE pg_catalog."default",
     "idOficial" uuid,
-    "domicillioInfractor" uuid NOT NULL,
-    "descripcionConducta" character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    "domicillioInfractor" uuid,
+    "descripcionConducta" character varying(255) COLLATE pg_catalog."default",
     "licenciaInfractor" uuid,
     borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT infracciones_pkey PRIMARY KEY ("idInfraccion")

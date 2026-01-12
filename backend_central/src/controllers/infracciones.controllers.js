@@ -18,44 +18,60 @@ export const createInfraccion = async (req, res) => {
         }
 
         // Necesita: latitud , longitud
-        const ubicacion = await createUbicacion(req, res);
-        if (!ubicacion) return; 
+        const ubicacion_id = await createUbicacion(req, res);
+        if (!ubicacion_id) return; 
 
         // Necesita: placa o niv
         const reporteVehiculo = await getVehiculo(req, res); 
         if (!reporteVehiculo) return; 
 
         const id_vehiculo = reporteVehiculo.placa || reporteVehiculo.niv;
-
+        
         // Necesita: id_agente
         const folioInfraccion = await createFolio(req, res);
         if (!folioInfraccion) return;
 
+        const newFolio = folioInfraccion.folioInfraccion;
+        const idOficial = folioInfraccion.idOficial;
+
         // Necesita: placa, motivosIds(infracciones), id_agente, folioInfraccion
-        const lineaCaptura = await getLineaCaptura(req, res);
+        const lineaCaptura = await getLineaCaptura(req, res, folioInfraccion);
         if (!lineaCaptura) return;
 
         const nuevaInfraccion = {
-            folioInfraccion,
+            folioInfraccion: newFolio,
             lineaCaptura,
             fecha,
-            ubicacion,
+            ubicacion: ubicacion_id,
             id_vehiculo,
-            id_agente,
+            id_agente: idOficial,
             descripcion,
-            id_licencia
         };
 
-        pool.query(`INSERT INTO "infracciones" (folio_infraccion, linea_captura, fecha, ubicacion_id, id_vehiculo, id_agente, descripcion, id_licencia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
+        const query = `
+            INSERT INTO "infracciones" (
+                "folioInfraccion", 
+                "lineaCaptura", 
+                fecha, 
+                ubicacion, 
+                "vehiculoInfraccionado", 
+                "idOficial", 
+                "descripcionConducta" 
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+
+        const values = [
             nuevaInfraccion.folioInfraccion,
             nuevaInfraccion.lineaCaptura,
             nuevaInfraccion.fecha,
-            nuevaInfraccion.ubicacion.id,
+            nuevaInfraccion.ubicacion,
             nuevaInfraccion.id_vehiculo,
             nuevaInfraccion.id_agente,
-            nuevaInfraccion.descripcion,
-            nuevaInfraccion.id_licencia
-        ]);
+            nuevaInfraccion.descripcion
+        ];
+
+        console.log("Nueva infracción a guardar:", nuevaInfraccion);
+
+        pool.query(query, values);
         
         res.status(201).json({ mensaje: "Infracción creada exitosamente", infraccion: nuevaInfraccion });
 
