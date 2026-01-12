@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.infracciones
 
 CREATE TABLE IF NOT EXISTS public.ubicacion
 (
-    id uuid NOT NULL,
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
     municipio character varying(255) COLLATE pg_catalog."default",
     location geography(Point,4326),
     vialidad character varying(255) COLLATE pg_catalog."default",
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS public.ubicacion
     "nombreAsentamiento" character varying(255) COLLATE pg_catalog."default",
     "codigoPostal" character varying(10) COLLATE pg_catalog."default",
     "nombreEntidad" character varying(100) COLLATE pg_catalog."default",
+    "coordenadas" character varying(100) COLLATE pg_catalog."default",
     borrado boolean NOT NULL DEFAULT false,
     CONSTRAINT ubicacion_pkey PRIMARY KEY (id)
 );
