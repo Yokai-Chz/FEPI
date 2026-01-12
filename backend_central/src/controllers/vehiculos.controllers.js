@@ -2,21 +2,25 @@ import { API_REPUVE } from "../config.js";
 
 export const getVehiculo = async (req, res) => {
     const { placa, niv } = req.body;
-    const url = API_REPUVE;
-
+    const url = `${API_REPUVE}/${placa || niv}`;
+    
     try {
         const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ placa, niv })
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
         });
 
         const data = await response.json();
+        
+        if ((!data.placa && !data.niv)) {
+            res.status(404).json({ error: "Vehículo no encontrado en REPUVE" });
+            return null;
+        }
 
         return {
-            placa: data.identificacion_vehicular.placa,
-            niv: data.identificacion_vehicular.niv,
-            tieneReporteRobo: data.estatus_legal.tiene_reporte_robo
+            placa: data.placa,
+            niv: data.niv,
+            tieneReporteRobo: data.tiene_reporte_robo
         };
 
     } catch (error) {

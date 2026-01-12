@@ -6,9 +6,9 @@ export const DB_CONFIG = {
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5430,
 };
 
-export const API_FINANZAS = process.env.API_FINANZAS || 'https://api.finanzas.com';
-export const API_REPUVE = process.env.API_REPUVE || 'https://api.repuve.gob.mx';
-export const API_SEMOVI_CONDUCTORES = process.env.API_SEMOVI_CONDUCTORES || 'https://api.semoviconductores.gob.mx';
+export const API_FINANZAS = process.env.API_FINANZAS || 'http://localhost:3000/api/finanzas/linea-captura';
+export const API_REPUVE = process.env.API_REPUVE || 'http://localhost:8000/api/semovi/vehiculo';
+export const API_SEMOVI_CONDUCTORES = process.env.API_SEMOVI_CONDUCTORES || 'http://localhost:8000/api/semovi/licencia/';
 
-export const PORT = process.env.PORT || 3000;
+export const PORT = process.env.PORT || 4000;
 
