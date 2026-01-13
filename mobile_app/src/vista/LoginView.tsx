@@ -1,5 +1,26 @@
 import React, { useState } from 'react';
 import { 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  StyleSheet, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  Image, 
+  KeyboardAvoidingView, 
+  Platform, 
+  SafeAreaView, 
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import { useAuth } from '../context/AuthContext';
+
+export default function LoginView() {
+  const { signIn } = useAuth();
+=======
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
   Image, KeyboardAvoidingView, Platform, SafeAreaView, 
   ScrollView, Alert, ActivityIndicator 
@@ -14,8 +35,36 @@ export default function LoginView() {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
+=======
+>>>>>>> c4ab953 (fetch,token)
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
   const [showPassword, setShowPassword] = useState(false);
+  const [placa, setPlaca] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  const manejarLogin = async () => {
+    if (!placa || !password) {
+      setError('Por favor, ingrese sus credenciales');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      await signIn({ placa, password });
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setIsLoading(false);
+=======
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
   // LÓGICA DE CONEXIÓN
   const manejarLogin = async () => {
     if (!usuario || !password) {
@@ -45,6 +94,10 @@ export default function LoginView() {
       Alert.alert("Error de Conexión", "No se pudo validar con el servidor de la SSC.");
     } finally {
       setLoading(false);
+<<<<<<< HEAD
+=======
+>>>>>>> c4ab953 (fetch,token)
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
     }
   };
 
@@ -79,7 +132,18 @@ export default function LoginView() {
             <Text style={styles.welcomeTitle}>Bienvenido</Text>
             <Text style={styles.welcomeSub}>Ingrese sus credenciales de oficial</Text>
 
+<<<<<<< HEAD
             {/* Input Placa/ID */}
+=======
+<<<<<<< HEAD
+            {/* Mensaje de Error */}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            {/* Input Placa */}
+=======
+            {/* Input Placa/ID */}
+>>>>>>> c4ab953 (fetch,token)
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>NÚMERO DE PLACA / ID</Text>
               <View style={styles.inputContainer}>
@@ -88,9 +152,21 @@ export default function LoginView() {
                   placeholder="982734"
                   placeholderTextColor="#9ca3af"
                   style={styles.input}
+<<<<<<< HEAD
                   value={usuario}
                   onChangeText={setUsuario}
                   keyboardType="numeric"
+=======
+<<<<<<< HEAD
+                  value={placa}
+                  onChangeText={setPlaca}
+                  autoCapitalize="none"
+=======
+                  value={usuario}
+                  onChangeText={setUsuario}
+                  keyboardType="numeric"
+>>>>>>> c4ab953 (fetch,token)
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
                 />
               </View>
             </View>
@@ -114,6 +190,18 @@ export default function LoginView() {
               </View>
             </View>
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+            {/* Botón Iniciar Turno */}
+            <TouchableOpacity 
+              style={[styles.button, isLoading && styles.buttonDisabled]} 
+              onPress={manejarLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+=======
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
             {/* Botón con estado de Carga */}
             <TouchableOpacity 
               style={[styles.button, loading && { opacity: 0.7 }]} 
@@ -121,6 +209,10 @@ export default function LoginView() {
               disabled={loading}
             >
               {loading ? (
+<<<<<<< HEAD
+=======
+>>>>>>> c4ab953 (fetch,token)
+>>>>>>> fa95497e263def591906ea02f3a3383341e37251
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.buttonText}>INICIAR TURNO</Text>
@@ -160,6 +252,8 @@ const styles = StyleSheet.create({
   welcomeTitle: { fontSize: 24, fontWeight: 'bold', color: '#1f2937' },
   welcomeSub: { color: '#9ca3af', fontSize: 14, marginBottom: 32 },
 
+  errorText: { color: '#dc2626', fontSize: 12, marginBottom: 16, fontWeight: 'bold', textAlign: 'center' },
+
   inputWrapper: { marginBottom: 24 },
   label: { color: '#691C32', fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#f3f4f6', borderRadius: 16, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 16 : 8 },
@@ -168,6 +262,7 @@ const styles = StyleSheet.create({
   eyeIcon: { width: 24, height: 24, opacity: 0.4 },
 
   button: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 24, alignItems: 'center', marginTop: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5, elevation: 5 },
+  buttonDisabled: { opacity: 0.7 },
   buttonText: { color: 'white', fontWeight: 'bold', letterSpacing: 2, fontSize: 12 },
 
   forgotContainer: { marginTop: 40, alignItems: 'center', marginBottom: 20 },
