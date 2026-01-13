@@ -14,9 +14,14 @@ import {
   FileText, Truck, Camera, Clock, 
   Search, ShieldAlert, BookOpen 
 } from 'lucide-react-native';
+import OfficialProfile from '../../components/OfficialProfile';
+import ServiceCard from '../../components/ServiceCard';
+import ShortcutCard from '../../components/ShortcutCard';
+import { useAuth } from '../context/AuthContext';
 
 export default function MainDashboardView() {
   const router = useRouter();
+  const { user } = useAuth();
   
   // Colores Institucionales CDMX
   const gobVino = '#691C32';
@@ -41,15 +46,11 @@ export default function MainDashboardView() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Perfil del Oficial */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <User size={30} color="#9ca3af" />
-          </View>
-          <View>
-            <Text style={[styles.welcomeText, { color: gobVino }]}>Hola, Oficial García</Text>
-            <Text style={styles.idText}>ID: 4429 • SECTOR JUÁREZ</Text>
-          </View>
-        </View>
+        <OfficialProfile 
+          nombre={user?.name || 'Oficial'} 
+          id={user?.id || '----'} 
+          sector={user?.sector || 'SIN SECTOR'} 
+        />
 
         {/* Filtros Rápidos */}
         <View style={styles.filterContainer}>
@@ -75,26 +76,26 @@ export default function MainDashboardView() {
           <Text style={[styles.sectionTitle, { color: gobVino }]}>SERVICIOS DE TRÁNSITO</Text>
           <View style={styles.grid3}>
             
-            <TouchableOpacity style={styles.serviceCard} onPress={() => router.push('/nueva-infraccion')}>
-              <View style={[styles.iconLarge, { backgroundColor: gobVino }]}>
-                <FileText size={20} color="white" />
-              </View>
-              <Text style={styles.serviceLabel}>CREAR MULTA</Text>
-            </TouchableOpacity>
+            <ServiceCard 
+              label="CREAR MULTA"
+              icon={FileText}
+              bgColor={gobVino}
+              onPress={() => router.push('/nueva-infraccion')}
+            />
 
-            <TouchableOpacity style={styles.serviceCard} onPress={() => router.push('/detalles')}>
-              <View style={[styles.iconLarge, { backgroundColor: '#10b981' }]}>
-                <Truck size={20} color="white" />
-              </View>
-              <Text style={styles.serviceLabel}>PEDIR GRÚA</Text>
-            </TouchableOpacity>
+            <ServiceCard 
+              label="PEDIR GRÚA"
+              icon={Truck}
+              bgColor="#10b981"
+              onPress={() => router.push('/detalles')}
+            />
 
-            <TouchableOpacity style={styles.serviceCard} onPress={() => router.push('/evidencia')}>
-              <View style={[styles.iconLarge, { backgroundColor: gobDorado }]}>
-                <Camera size={20} color="white" />
-              </View>
-              <Text style={styles.serviceLabel}>EVIDENCIAS</Text>
-            </TouchableOpacity>
+            <ServiceCard 
+              label="EVIDENCIAS"
+              icon={Camera}
+              bgColor={gobDorado}
+              onPress={() => router.push('/evidencia')}
+            />
 
           </View>
         </View>
@@ -104,45 +105,41 @@ export default function MainDashboardView() {
           <Text style={[styles.sectionTitle, { color: gobVino }]}>MIS ATAJOS</Text>
           <View style={styles.grid2}>
             
-            <TouchableOpacity style={styles.shortcutCard} onPress={() => router.push('/parquimetro')}>
-              <View style={[styles.iconSmall, { backgroundColor: `${gobDorado}20` }]}>
-                <Clock size={16} color={gobDorado} />
-              </View>
-              <View>
-                <Text style={styles.shortcutMain}>PARQUÍMETRO</Text>
-                <Text style={styles.shortcutSub}>Consultar Tiempo</Text>
-              </View>
-            </TouchableOpacity>
+            <ShortcutCard 
+              title="PARQUÍMETRO"
+              subtitle="Consultar Tiempo"
+              icon={Clock}
+              iconColor={gobDorado}
+              iconBgColor={`${gobDorado}20`}
+              onPress={() => router.push('/parquimetro')}
+            />
 
-            <TouchableOpacity style={[styles.shortcutCard, { opacity: 0.6 }]}>
-              <View style={[styles.iconSmall, { backgroundColor: '#eff6ff' }]}>
-                <Search size={16} color="#3b82f6" />
-              </View>
-              <View>
-                <Text style={styles.shortcutMain}>ADEUDOS</Text>
-                <Text style={styles.shortcutSub}>Estatus Historial</Text>
-              </View>
-            </TouchableOpacity>
+            <ShortcutCard 
+              title="ADEUDOS"
+              subtitle="Estatus Historial"
+              icon={Search}
+              iconColor="#3b82f6"
+              iconBgColor="#eff6ff"
+              disabled={true}
+            />
 
-            <TouchableOpacity style={[styles.shortcutCard, { opacity: 0.6 }]}>
-              <View style={[styles.iconSmall, { backgroundColor: '#fff1f2' }]}>
-                <ShieldAlert size={16} color="#f43f5e" />
-              </View>
-              <View>
-                <Text style={styles.shortcutMain}>ROBO</Text>
-                <Text style={styles.shortcutSub}>Verificación SSC</Text>
-              </View>
-            </TouchableOpacity>
+            <ShortcutCard 
+              title="ROBO"
+              subtitle="Verificación SSC"
+              icon={ShieldAlert}
+              iconColor="#f43f5e"
+              iconBgColor="#fff1f2"
+              disabled={true}
+            />
 
-            <TouchableOpacity style={[styles.shortcutCard, { opacity: 0.6 }]}>
-              <View style={[styles.iconSmall, { backgroundColor: '#f9fafb' }]}>
-                <BookOpen size={16} color="#4b5563" />
-              </View>
-              <View>
-                <Text style={styles.shortcutMain}>REGLAMENTO</Text>
-                <Text style={styles.shortcutSub}>Artículos</Text>
-              </View>
-            </TouchableOpacity>
+            <ShortcutCard 
+              title="REGLAMENTO"
+              subtitle="Artículos"
+              icon={BookOpen}
+              iconColor="#4b5563"
+              iconBgColor="#f9fafb"
+              disabled={true}
+            />
 
           </View>
         </View>
@@ -186,11 +183,6 @@ const styles = StyleSheet.create({
   
   scrollContent: { padding: 20, paddingBottom: 100 },
   
-  profileSection: { flexDirection: 'row', alignItems: 'center', gap: 16, marginVertical: 8 },
-  avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', borderWeight: 2, borderColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 2 },
-  welcomeText: { fontSize: 18, fontWeight: '900' },
-  idText: { fontSize: 10, color: '#9ca3af', fontWeight: 'bold', letterSpacing: 1 },
-
   filterContainer: { flexDirection: 'row', gap: 8, marginVertical: 16 },
   filterBtn: { px: 20, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, elevation: 2 },
   filterBtnInactive: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6' },
@@ -205,15 +197,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: 16, marginLeft: 4, fontStyle: 'italic' },
   
   grid3: { flexDirection: 'row', justifyContent: 'space-between' },
-  serviceCard: { width: '30%', backgroundColor: 'white', borderRadius: 24, padding: 16, alignItems: 'center', gap: 12, elevation: 2, borderWidth: 1, borderColor: '#f3f4f6' },
-  iconLarge: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', elevation: 3 },
-  serviceLabel: { fontSize: 9, fontWeight: '900', color: '#4b5563', textAlign: 'center' },
 
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  shortcutCard: { width: '48%', backgroundColor: 'white', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 1, borderWidth: 1, borderColor: '#f3f4f6' },
-  iconSmall: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  shortcutMain: { fontSize: 10, fontWeight: '900', color: '#1f2937' },
-  shortcutSub: { fontSize: 8, color: '#9ca3af', fontWeight: 'bold', marginTop: 2 },
 
   tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 32, paddingVertical: 12 },
   tabItem: { alignItems: 'center', gap: 4 },
