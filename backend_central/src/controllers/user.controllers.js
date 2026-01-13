@@ -18,3 +18,32 @@ export const createUser = async (req, res) => {
         return res.status(500).json({ error: "Database error" });
     }
 };
+
+
+export const getUser = (req, res) => {
+    const userId = req.params.id;
+    if (!userId) {
+        return res.status(400).json({ error: "Se requiere un id de usuario valido" });
+    }
+    // todo: implement
+};
+
+export const deleteUser = (req, res) => {
+    const userId = req.params.id;
+    if (!userId) {
+        return res.status(400).json({ error: "Se requiere un id de usuario valido" });
+    }
+    // todo: implement
+};
+
+export const updateUser = (req, res) => {
+    const userId = req.params.id;
+    if (!userId) {
+        return res.status(400).json({ error: "Se requiere un id de usuario valido" });
+    }
+    // todo: implement
+};
+
+export const getUsers = (req, res) => {
+    // todo: implement
+};
