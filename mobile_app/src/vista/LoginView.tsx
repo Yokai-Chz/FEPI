@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { 
+<<<<<<< HEAD
   StyleSheet, 
   View, 
   Text, 
@@ -16,12 +17,29 @@ import { useAuth } from '../context/AuthContext';
 
 export default function LoginView() {
   const { signIn } = useAuth();
+=======
+  StyleSheet, View, Text, TextInput, TouchableOpacity, 
+  Image, KeyboardAvoidingView, Platform, SafeAreaView, 
+  ScrollView, Alert, ActivityIndicator 
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { AuthService } from '../services/AuthService';
+
+export default function LoginView() {
+  const router = useRouter();
+  
+  // ESTADOS
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+>>>>>>> c4ab953 (fetch,token)
   const [showPassword, setShowPassword] = useState(false);
   const [placa, setPlaca] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+<<<<<<< HEAD
   const manejarLogin = async () => {
     if (!placa || !password) {
       setError('Por favor, ingrese sus credenciales');
@@ -37,71 +55,96 @@ export default function LoginView() {
       setError(err.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
+=======
+  // LÓGICA DE CONEXIÓN
+  const manejarLogin = async () => {
+    if (!usuario || !password) {
+      Alert.alert("Campos incompletos", "Por favor ingrese su ID y Contraseña.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Simulación de llamada al Backend 
+      // fetch a `${API_URL}/api/auth/login`
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulando red
+
+      // SUPONGAMOS QUE EL BACKEND RESPONDE ESTO:
+      const respuestaBack = {
+        success: true,
+        token: "JWT_GENERADO_POR_EL_BACKEND_2026",
+        oficial: { id: "4429", nombre: "García" }
+      };
+
+      if (respuestaBack.success) {
+        // GUARDAMOS EL TOKEN 
+        await AuthService.guardarToken(respuestaBack.token);
+        router.replace('/dashboard');
+      }
+    } catch (error) {
+      Alert.alert("Error de Conexión", "No se pudo validar con el servidor de la SSC.");
+    } finally {
+      setLoading(false);
+>>>>>>> c4ab953 (fetch,token)
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-          style={styles.flex1}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           
           {/* Header con Logos */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <View style={styles.iconBox}>
-                <Image 
-                  source={require('../../assets/images/logo_gobierno.png')} 
-                  style={styles.logoIcon} 
-                  resizeMode="contain" 
-                />
+                <Image source={require('../../assets/images/logo_gobierno.png')} style={styles.logoIcon} resizeMode="contain" />
               </View>
               <Text style={styles.logoText}>GOBIERNO CDMX</Text>
             </View>
-
             <View style={styles.logoContainer}>
               <View style={styles.iconBox}>
-                <Image 
-                  source={require('../../assets/images/logo_ssc.png')} 
-                  style={styles.logoIcon} 
-                  resizeMode="contain" 
-                />
+                <Image source={require('../../assets/images/logo_ssc.png')} style={styles.logoIcon} resizeMode="contain" />
               </View>
               <Text style={styles.logoText}>SECRETARÍA DE{'\n'}SEGURIDAD CIUDADANA</Text>
             </View>
           </View>
 
-          {/* Titulo Central */}
           <View style={styles.centerTitleContainer}>
             <Text style={styles.mainTitle}>SSC</Text>
             <Text style={styles.subTitle}>CONTROL DE TRÁNSITO</Text>
           </View>
 
-          {/* Tarjeta Blanca */}
+          {/* Inputs */}
           <View style={styles.card}>
             <Text style={styles.welcomeTitle}>Bienvenido</Text>
             <Text style={styles.welcomeSub}>Ingrese sus credenciales de oficial</Text>
 
+<<<<<<< HEAD
             {/* Mensaje de Error */}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             {/* Input Placa */}
+=======
+            {/* Input Placa/ID */}
+>>>>>>> c4ab953 (fetch,token)
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>NÚMERO DE PLACA / ID</Text>
               <View style={styles.inputContainer}>
-                <Image 
-                  source={require('../../assets/images/icon_user.png')} 
-                  style={styles.inputIcon} 
-                />
+                <Image source={require('../../assets/images/icon_user.png')} style={styles.inputIcon} />
                 <TextInput 
                   placeholder="982734"
                   placeholderTextColor="#9ca3af"
                   style={styles.input}
+<<<<<<< HEAD
                   value={placa}
                   onChangeText={setPlaca}
                   autoCapitalize="none"
+=======
+                  value={usuario}
+                  onChangeText={setUsuario}
+                  keyboardType="numeric"
+>>>>>>> c4ab953 (fetch,token)
                 />
               </View>
             </View>
@@ -110,10 +153,7 @@ export default function LoginView() {
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>CONTRASEÑA (NIP)</Text>
               <View style={styles.inputContainer}>
-                <Image 
-                  source={require('../../assets/images/icon_candado.png')} 
-                  style={styles.inputIcon} 
-                />
+                <Image source={require('../../assets/images/icon_candado.png')} style={styles.inputIcon} />
                 <TextInput 
                   placeholder="••••••••"
                   placeholderTextColor="#9ca3af"
@@ -123,14 +163,12 @@ export default function LoginView() {
                   onChangeText={setPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Image 
-                    source={require('../../assets/images/icon_ojo.png')} 
-                    style={styles.eyeIcon} 
-                  />
+                  <Image source={require('../../assets/images/icon_ojo.png')} style={styles.eyeIcon} />
                 </TouchableOpacity>
               </View>
             </View>
 
+<<<<<<< HEAD
             {/* Botón Iniciar Turno */}
             <TouchableOpacity 
               style={[styles.button, isLoading && styles.buttonDisabled]} 
@@ -138,6 +176,15 @@ export default function LoginView() {
               disabled={isLoading}
             >
               {isLoading ? (
+=======
+            {/* Botón con estado de Carga */}
+            <TouchableOpacity 
+              style={[styles.button, loading && { opacity: 0.7 }]} 
+              onPress={manejarLogin}
+              disabled={loading}
+            >
+              {loading ? (
+>>>>>>> c4ab953 (fetch,token)
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.buttonText}>INICIAR TURNO</Text>
@@ -149,7 +196,6 @@ export default function LoginView() {
             </TouchableOpacity>
           </View>
 
-          {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>SECRETARÍA DE SEGURIDAD CIUDADANA</Text>
             <View style={styles.footerBar} />

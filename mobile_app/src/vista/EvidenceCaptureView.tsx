@@ -58,7 +58,7 @@ export default function EvidenceCaptureView() {
 
   const finalizarCaptura = () => {
     if (totalFotos === 4) {
-      // Aquí podrías guardar las fotos en un contexto global antes de volver
+      // Aquí guardar las fotos
       router.back();
     } else {
       Alert.alert("Incompleto", "El reglamento exige las 4 fotografías.");

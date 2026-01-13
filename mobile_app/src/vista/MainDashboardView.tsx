@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useRouter } from 'expo-router';
 import {
   Bell,
@@ -26,11 +27,62 @@ import { COLORS, FONT_SIZE, SPACING } from '../../constants/theme';
 import { useAuth } from '../context/AuthContext';
 import { globalStyles } from '../styles/globalStyles';
 
+=======
+import React from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  StatusBar,
+  Alert 
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { 
+  Menu, Bell, User, 
+  FileText, Truck, Camera, Clock, 
+  Search, ShieldAlert, BookOpen,
+  LogOut 
+} from 'lucide-react-native';
+import { AuthService } from '../services/AuthService'; 
+>>>>>>> c4ab953 (fetch,token)
 
 export default function MainDashboardView() {
   const router = useRouter();
   const { user } = useAuth();
   
+<<<<<<< HEAD
+=======
+  // Colores
+  const gobVino = '#691C32';
+  const gobDorado = '#BC955C';
+
+  // CIERRE DE SESIÓN
+  const manejarCerrarSesion = () => {
+    Alert.alert(
+      "TERMINAR TURNO",
+      "¿Desea cerrar sesión y salir del sistema?",
+      [
+        { text: "CANCELAR", style: "cancel" },
+        { 
+          text: "SALIR", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AuthService.cerrarSesion(); 
+              router.replace('/');
+            } catch (error) {
+              Alert.alert("Error", "No se pudo cerrar la sesión correctamente.");
+            }
+          } 
+        }
+      ]
+    );
+  };
+
+>>>>>>> c4ab953 (fetch,token)
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
@@ -49,12 +101,36 @@ export default function MainDashboardView() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
+<<<<<<< HEAD
         {/* Perfil del Oficial */}
         <OfficialProfile 
           nombre={user?.name || 'Oficial'} 
           id={user?.id || '----'} 
           sector={user?.sector || 'SIN SECTOR'} 
         />
+=======
+        {/* Perfil del Oficial con Botón de Salida */}
+        <View style={styles.profileRow}>
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              <User size={30} color="#9ca3af" />
+            </View>
+            <View>
+              <Text style={[styles.welcomeText, { color: gobVino }]}>Hola, Oficial García</Text>
+              <Text style={styles.idText}>ID: 4429 • SECTOR JUÁREZ</Text>
+            </View>
+          </View>
+
+          {/* BOTÓN SALIR */}
+          <TouchableOpacity 
+            style={styles.logoutBtn} 
+            onPress={manejarCerrarSesion}
+          >
+            <LogOut size={16} color="#ef4444" />
+            <Text style={styles.logoutText}>SALIR</Text>
+          </TouchableOpacity>
+        </View>
+>>>>>>> c4ab953 (fetch,token)
 
         {/* Filtros Rápidos */}
         <View style={styles.filterContainer}>
@@ -196,6 +272,7 @@ const styles = StyleSheet.create({
   
   scrollContent: { padding: SPACING.lg, paddingBottom: 100 },
   
+<<<<<<< HEAD
   filterContainer: { flexDirection: 'row', gap: SPACING.sm, marginVertical: SPACING.md },
   filterBtn: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, elevation: 2 },
   filterBtnInactive: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.background },
@@ -213,6 +290,27 @@ const styles = StyleSheet.create({
     gap: 12 
   },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.success },
+=======
+  // NUEVO: Fila para alinear perfil y salir
+  profileRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  profileSection: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  avatarContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center', elevation: 2 },
+  welcomeText: { fontSize: 18, fontWeight: '900' },
+  idText: { fontSize: 10, color: '#9ca3af', fontWeight: 'bold', letterSpacing: 1 },
+
+  // NUEVO: Estilo botón salir
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fee2e2', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+  logoutText: { color: '#ef4444', fontSize: 10, fontWeight: '900' },
+
+  filterContainer: { flexDirection: 'row', gap: 8, marginVertical: 16 },
+  filterBtn: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, elevation: 2 },
+  filterBtnInactive: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6' },
+  filterTextActive: { color: 'white', fontSize: 10, fontWeight: '900' },
+  filterTextInactive: { color: '#9ca3af', fontSize: 10, fontWeight: '900' },
+
+  statusBox: { backgroundColor: '#ecfdf5', borderColor: '#d1fae5', borderWidth: 1, borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981' },
+>>>>>>> c4ab953 (fetch,token)
   statusText: { color: '#047857', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
 
   sectionContainer: { marginTop: SPACING.lg },

@@ -8,23 +8,26 @@ import {
   Image, 
   ScrollView, 
   SafeAreaView, 
-  Alert,
+  Alert,           
+  ActivityIndicator,
   Platform,
   KeyboardAvoidingView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Check, MapPin, Plus } from 'lucide-react-native';
+import { InfraccionService, InfraccionData } from '../services/InfraccionService';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
 
-  // --- ESTADOS ---
+  // ESTADOS
   const [placa, setPlaca] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<any>(null);
   const [ubicacion, setUbicacion] = useState("Av. Insurgentes Sur 123, CDMX");
   const [esComercial, setEsComercial] = useState(false);
   const [fotosCapturadas, setFotosCapturadas] = useState([]);
+  const [enviando, setEnviando] = useState(false);
 
   // Validación
   const esFormularioValido = 
@@ -32,7 +35,7 @@ export default function NuevaInfraccionView() {
     articuloSeleccionado !== null && 
     ubicacion.trim().length >= 10;
 
-  // --- FUNCIONES ---
+  // FUNCIONES
   const seleccionarArticulo = () => {
     setArticuloSeleccionado({
       titulo: "Art. 9, Fracc II: Semáforo en Rojo",
@@ -41,13 +44,37 @@ export default function NuevaInfraccionView() {
     setBusqueda(""); 
   };
 
-  const finalizarBoleta = () => {
+  const finalizarBoleta = async () => {
+  setEnviando(true);
+
+  // Extraemos el ID del título 
+  const idArticulo = articuloSeleccionado?.titulo.includes("Art. 9") ? "ART-09" : "ART-GENERICO";
+
+  const nuevaMulta: InfraccionData = {
+    fecha: new Date().toISOString(),
+    latitud: 19.4326, 
+    longitud: -99.1332,
+    placa: placa, 
+    niv: "1GKSKDEFGH1234567", 
+    id_agente: "4429", 
+    id_licencia: "LIC-XYZ",
+    infracciones: [idArticulo]
+  };
+
+  try {
+    const respuesta = await InfraccionService.enviar(nuevaMulta);
+    
     Alert.alert(
-      "Éxito", 
-      "✅ Folio generado con éxito. Enviando reporte a plataforma SSC...",
+      "ÉXITO", 
+      `Infracción registrada correctamente.\nFolio: ${respuesta.folioInfraccion || 'Pendiente'}`,
       [{ text: "OK", onPress: () => router.replace('/dashboard') }]
     );
-  };
+  } catch (error) {
+    Alert.alert("ERROR DE RED", "No se pudo conectar con el servidor. Verifica que el backend esté activo y en la misma red.");
+  } finally {
+    setEnviando(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -182,14 +209,18 @@ export default function NuevaInfraccionView() {
         {/* Botón Final */}
         <View style={styles.footer}>
           <TouchableOpacity 
-            style={[styles.mainBtn, !esFormularioValido && styles.mainBtnDisabled]}
-            disabled={!esFormularioValido}
+            style={[styles.mainBtn, (!esFormularioValido || enviando) && styles.mainBtnDisabled]}
+            disabled={!esFormularioValido || enviando}
             onPress={finalizarBoleta}
           >
-            <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
-              {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
-            </Text>
-          </TouchableOpacity>
+          {enviando ? (
+            <ActivityIndicator color="white" /> 
+            ) : (
+          <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
+          {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
+          </Text>
+          )}
+        </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
