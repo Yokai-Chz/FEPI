@@ -13,24 +13,24 @@ export const login = async (req, res) => {
     }
 
     try {
-        const result = await pool.query(`SELECT * FROM "users" WHERE username = $1`, [username]);
+        const result = await pool.query(`SELECT * FROM "usuarios" WHERE username = $1`, [username]);
         const user = result.rows[0];
 
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
-
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    
+        const isPasswordCorrect = await bcrypt.compare(password, user.password_hash);
 
         if (!isPasswordCorrect) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-            expiresIn: "3h",
+        const token = jwt.sign({ id_usuario: user.id_usuario, username: user.username }, JWT_SECRET, {
+            expiresIn: "12h",
         });
-
-        res.json({ token });
+        
+        res.status(200).json({ token });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Database error" });
