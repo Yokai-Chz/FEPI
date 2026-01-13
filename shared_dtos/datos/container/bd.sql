@@ -6,8 +6,7 @@ CREATE TABLE ubicacion (
     nombre_asentamiento VARCHAR(150),
     codigo_postal VARCHAR(10),
     nombre_entidad VARCHAR(100),
-    coordenadas VARCHAR(100),
-    borrado BOOLEAN DEFAULT FALSE
+    coordenadas VARCHAR(100)
 );
 
 CREATE TABLE catalogo_infracciones (
@@ -15,8 +14,7 @@ CREATE TABLE catalogo_infracciones (
     articulo VARCHAR(10),
     fraccion VARCHAR(10),
     descripcion TEXT,
-    monto VARCHAR(20),
-    borrado BOOLEAN DEFAULT FALSE
+    monto VARCHAR(20)
 );
 
 CREATE TABLE personas (
@@ -25,8 +23,7 @@ CREATE TABLE personas (
     apellido_paterno VARCHAR(100),
     apellido_materno VARCHAR(100),
     curp VARCHAR(18) UNIQUE,
-    rfc VARCHAR(13) UNIQUE,
-    borrado BOOLEAN DEFAULT FALSE
+    rfc VARCHAR(13) UNIQUE
 );
 
 CREATE TABLE usuarios (
@@ -34,8 +31,7 @@ CREATE TABLE usuarios (
     id_persona INTEGER REFERENCES personas(id_persona),
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    tipo_usuario VARCHAR(20) CHECK (tipo_usuario IN ('admin', 'oficial', 'consulta')),
-    placa_oficial VARCHAR(20),
+    tipo_usuario VARCHAR(20) CHECK (tipo_usuario IN ('admin', 'oficial', 'consulta')),    
     borrado BOOLEAN DEFAULT FALSE
 );
 
@@ -47,14 +43,13 @@ CREATE TABLE infracciones (
     vehiculo_infraccionado VARCHAR(15),
     id_usuario INTEGER REFERENCES usuarios(id_usuario),
     licencia_infractor VARCHAR(25),
-    borrado BOOLEAN DEFAULT FALSE
+    estatus_pago BOOLEAN DEFAULT FALSE,
 );
 
 CREATE TABLE asociacion_infracciones (
     id_asociacion_infracciones SERIAL PRIMARY KEY, 
     id_catalogo_infraccion INTEGER REFERENCES catalogo_infracciones(id_catalogo_infracciones),
-    id_infraccion INTEGER REFERENCES infracciones(id_infraccion),
-    borrado BOOLEAN DEFAULT FALSE
+    id_infraccion INTEGER REFERENCES infracciones(id_infraccion)
 );
 
 
