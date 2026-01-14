@@ -1,5 +1,5 @@
 services:
-  db:
+  db_gruas:
     build:
       context: .
       dockerfile: Dockerfile
