@@ -3,19 +3,15 @@ import { StyleSheet, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } 
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Zap, Check, Trash2, Camera, X } from 'lucide-react-native';
+import { useInfraccion } from '../context/InfraccionContext';
 
 export default function EvidenceCaptureView() {
   const router = useRouter();
   const cameraRef = useRef<any>(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const { fotos, setFoto } = useInfraccion();
   
   const [flashOn, setFlashOn] = useState(false);
-  const [fotos, setFotos] = useState<any>({
-    placa: null,
-    infraccion: null,
-    frente: null,
-    posterior: null
-  });
   const [seleccion, setSeleccion] = useState('placa');
 
   const categorias = [
@@ -45,7 +41,7 @@ export default function EvidenceCaptureView() {
         base64: true,
       });
       
-      setFotos((prev: any) => ({ ...prev, [seleccion]: photo.uri }));
+      setFoto(seleccion, photo.uri);
       
       // Saltar a la siguiente categoría vacía
       const siguiente = categorias.find(c => !fotos[c.id] && c.id !== seleccion);
@@ -53,16 +49,12 @@ export default function EvidenceCaptureView() {
     }
   };
 
-  const borrarFoto = (id: string) => setFotos((prev: any) => ({ ...prev, [id]: null }));
+  const borrarFoto = (id: string) => setFoto(id, null);
   const totalFotos = Object.values(fotos).filter(f => f !== null).length;
 
   const finalizarCaptura = () => {
-    if (totalFotos === 4) {
-      // Aquí podrías guardar las fotos en un contexto global antes de volver
-      router.back();
-    } else {
-      Alert.alert("Incompleto", "El reglamento exige las 4 fotografías.");
-    }
+    // Ya están guardadas en el contexto, solo regresamos
+    router.back();
   };
 
   return (
@@ -84,7 +76,7 @@ export default function EvidenceCaptureView() {
       <View style={styles.cameraContainer}>
         {fotos[seleccion] ? (
           <View style={styles.previewContainer}>
-            <Image source={{ uri: fotos[seleccion] }} style={styles.fullImage} />
+            <Image source={{ uri: fotos[seleccion]! }} style={styles.fullImage} />
             <View style={styles.overlay}>
               <TouchableOpacity style={styles.deleteBtn} onPress={() => borrarFoto(seleccion)}>
                 <Trash2 size={24} color="white" />
@@ -128,7 +120,7 @@ export default function EvidenceCaptureView() {
             >
               {fotos[cat.id] ? (
                 <View style={styles.thumbWrapper}>
-                  <Image source={{ uri: fotos[cat.id] }} style={styles.thumb} />
+                  <Image source={{ uri: fotos[cat.id]! }} style={styles.thumb} />
                   <View style={styles.checkOverlay}><Check size={14} color="white" /></View>
                 </View>
               ) : (

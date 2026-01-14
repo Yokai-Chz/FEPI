@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -10,33 +10,81 @@ import {
   SafeAreaView, 
   Alert,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
+import * as Location from 'expo-location';
 
 // Componentes
 import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
 import InfractionSelector, { InfractionArticle } from '../../components/infraccion/InfractionSelector';
 import EvidencePreview from '../../components/infraccion/EvidencePreview';
+import { useInfraccion } from '../context/InfraccionContext';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
+  const { fotos, resetFotos } = useInfraccion();
 
   // --- ESTADOS ---
   const [placa, setPlaca] = useState("");
   const [articulosSeleccionados, setArticulosSeleccionados] = useState<InfractionArticle[]>([]);
-  const [ubicacion, setUbicacion] = useState("Av. Insurgentes Sur 123, CDMX");
+  
+  // Ubicación y GPS
+  const [ubicacion, setUbicacion] = useState("");
+  const [coordenadas, setCoordenadas] = useState<{lat: number, lon: number} | null>(null);
+  const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+
   const [esComercial, setEsComercial] = useState(false);
-  const [fotosCapturadas, setFotosCapturadas] = useState([]);
 
   // Validación
   const esFormularioValido = 
     placa.trim().length >= 3 && 
     articulosSeleccionados.length > 0 && 
-    ubicacion.trim().length >= 10;
+    ubicacion.trim().length >= 5;
 
   // --- FUNCIONES ---
+  
+  useEffect(() => {
+    obtenerUbicacion();
+    // No reseteamos fotos al montar para permitir volver de la cámara sin perder datos
+    // resetFotos() se llamaría al enviar exitosamente o salir
+  }, []);
+
+  const obtenerUbicacion = async () => {
+    setCargandoUbicacion(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para registrar la infracción.');
+        setCargandoUbicacion(false);
+        return;
+      }
+
+      // Obtener Coordenadas
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      setCoordenadas({ lat: latitude, lon: longitude });
+
+      // Geocodificación Inversa (Coords -> Dirección)
+      let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
+      
+      if (addressResponse.length > 0) {
+        const addr = addressResponse[0];
+        const direccionFormateada = `${addr.street || 'Calle desconocida'} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.city || ''}`;
+        setUbicacion(direccionFormateada.trim());
+      } else {
+        setUbicacion(`${latitude}, ${longitude}`);
+      }
+
+    } catch (error) {
+      Alert.alert('Error GPS', 'No se pudo obtener la ubicación actual.');
+    } finally {
+      setCargandoUbicacion(false);
+    }
+  };
+
   const agregarArticulo = (articulo: InfractionArticle) => {
     setArticulosSeleccionados((prev) => [...prev, articulo]);
   };
@@ -46,10 +94,23 @@ export default function NuevaInfraccionView() {
   };
 
   const finalizarBoleta = () => {
+    console.log("Enviando al backend:", {
+      placa,
+      infracciones: articulosSeleccionados,
+      gps: coordenadas,
+      fotos: fotos // Aquí van las URIs temporales
+    });
+
     Alert.alert(
       "Éxito", 
-      `✅ Folio generado con ${articulosSeleccionados.length} infracciones. Enviando reporte a plataforma SSC...`,
-      [{ text: "OK", onPress: () => router.replace('/dashboard') }]
+      `✅ Folio generado.\nGPS: ${coordenadas?.lat.toFixed(4)}, ${coordenadas?.lon.toFixed(4)}`,
+      [{ 
+        text: "OK", 
+        onPress: () => {
+          resetFotos(); // Limpiar fotos tras éxito
+          router.replace('/dashboard');
+        } 
+      }]
     );
   };
 
@@ -92,7 +153,7 @@ export default function NuevaInfraccionView() {
 
           {/* EVIDENCIA */}
           <EvidencePreview 
-            photos={fotosCapturadas}
+            photos={fotos}
             onAddPress={() => router.push('/evidencia')}
           />
 
@@ -111,16 +172,25 @@ export default function NuevaInfraccionView() {
           <View style={styles.card}>
             <View style={styles.ubiHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>UBICACIÓN ACTUAL</Text>
+                <Text style={styles.sectionLabel}>UBICACIÓN ACTUAL (GPS)</Text>
                 <TextInput
                   style={styles.ubiInput}
                   value={ubicacion}
                   onChangeText={setUbicacion}
                   multiline
+                  placeholder="Obteniendo ubicación..."
                 />
               </View>
-              <TouchableOpacity style={styles.ubiIconBtn}>
-                <Image source={require('../../assets/images/icon_ubi.png')} style={styles.ubiIcon} />
+              <TouchableOpacity 
+                style={styles.ubiIconBtn} 
+                onPress={obtenerUbicacion}
+                disabled={cargandoUbicacion}
+              >
+                {cargandoUbicacion ? (
+                  <ActivityIndicator color="#691C32" />
+                ) : (
+                  <Image source={require('../../assets/images/icon_ubi.png')} style={styles.ubiIcon} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
