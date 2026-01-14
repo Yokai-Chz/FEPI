@@ -3,3 +3,4 @@ backend_central/.env
 backend_central/.vscode
 backend_externo/mockServer/mock_data.db
 backend_central/bd.sql
+backend_gruas/node_modules/
