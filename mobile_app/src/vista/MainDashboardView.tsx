@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import ConnectionStatus from '../../components/ConnectionStatus';
 import OfficialProfile from '../../components/OfficialProfile';
 import ServiceCard from '../../components/ServiceCard';
 import ShortcutCard from '../../components/ShortcutCard';
@@ -100,10 +101,7 @@ export default function MainDashboardView() {
         </View>
 
         {/* Status Sistema */}
-        <View style={styles.statusBox}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>SISTEMA CONECTADO (CDMX-HUB)</Text>
-        </View>
+        <ConnectionStatus />
 
         {/* Servicios de Tránsito */}
         <View style={styles.sectionContainer}>
@@ -233,19 +231,6 @@ const styles = StyleSheet.create({
   filterBtnInactive: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.background },
   filterTextActive: { color: 'white', fontSize: FONT_SIZE.xs, fontWeight: '900' },
   filterTextInactive: { color: COLORS.textLight, fontSize: FONT_SIZE.xs, fontWeight: '900' },
-
-  statusBox: { 
-    backgroundColor: '#ecfdf5', 
-    borderColor: '#d1fae5', 
-    borderWidth: 1, 
-    borderRadius: 16, 
-    padding: 12, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 12 
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.success },
-  statusText: { color: '#047857', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
 
   sectionContainer: { marginTop: SPACING.lg },
   sectionTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: SPACING.md, marginLeft: 4, fontStyle: 'italic' },
