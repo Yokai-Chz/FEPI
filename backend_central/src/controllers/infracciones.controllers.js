@@ -1,39 +1,31 @@
-import { createUbicacion } from "./ubicacion.controllers.js";
+import { createUbicacion, createUbicacionDirect } from "./ubicacion.controllers.js";
 import { getVehiculo } from "./vehiculos.controllers.js";
 import { getLineaCaptura } from "./lineaCaptura.controllers.js";
 import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
 import { pool } from "../db.js";
 
-const fechaEsValida = (fecha) => {
-    // todo: agregar revisiones adicionales a la fecha:
-    // que sea reciente a la fecha de peticion post, para que no sea posible crear infracciones mucho despues de la fecha
-    if(fecha) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-const agenteExiste = (id_agente) => {
-    // todo
-    return true;
-}
-
-const licenciaExiste = (id_licencia) => {
-    // todo
-    return true;
-}
 
 export const createInfraccion = async (req, res) => {
     try {
-        const { fecha, latitud, longitud, placa, niv, id_agente, id_licencia, infracciones} = req.body;
+        const { 
+            fecha, 
+            latitud, 
+            longitud, 
+            placa, 
+            niv, 
+            id_agente, 
+            id_licencia, 
+            infracciones, 
+            ubicacion_infractor,
+            evidencias
+        } = req.body;
 
         // Validamos que lleguen los datos del body
         if (!latitud || !longitud) {
             return res.status(400).json({ error: "Faltan latitud o longitud en el JSON" });
         }
         
-        const fechaValida = fechaEsValida(fecha);
+        const fechaValida = !isNaN(Date.parse(fecha));
         if(!fechaValida) {
             return res.status(400).json({error: "La fecha proporcionado no existe o no es valida"})
         }
@@ -42,17 +34,17 @@ export const createInfraccion = async (req, res) => {
             return res.status(400).json({ error: "Faltan placa y niv en el JSON" });
         }
 
-        if(!agenteExiste(id_agente)) {
-            return res.status(400).json({ error: "id de agente invalido" });
-        }
-
-        if(!licenciaExiste(id_licencia)) {
-            return res.status(400).json({ error: "id licencia invalido" });
-        }
-
         // Necesita: latitud , longitud
         const ubicacion_id = await createUbicacion(req, res);
         if (!ubicacion_id) return; 
+
+        let ubicacion_infractor_id = null;
+        if (ubicacion_infractor) {
+            ubicacion_infractor_id = await createUbicacionDirect(ubicacion_infractor);
+            if (!ubicacion_infractor_id) {
+                return res.status(500).json({ error: "Error al crear la ubicación del infractor" });
+            }
+        } 
 
         // Necesita: placa o niv
         const reporteVehiculo = await getVehiculo(req, res); 
@@ -65,7 +57,8 @@ export const createInfraccion = async (req, res) => {
             ubicacion: ubicacion_id, 
             id_vehiculo, 
             id_agente, 
-            id_licencia,
+            id_licencia: id_licencia || null,
+            ubicacion_infractor: ubicacion_infractor_id
         };
 
         const query = `
@@ -74,29 +67,34 @@ export const createInfraccion = async (req, res) => {
                 "ubicacion", 
                 "vehiculo_infraccionado", 
                 "id_usuario", 
-                "licencia_infractor" 
-            ) VALUES ($1, $2, $3, $4, $5) RETURNING id_infraccion`;
+                "licencia_infractor",
+                "ubicacion_infractor" 
+            ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_infraccion`;
 
         const values = [
             nuevaInfraccion.fecha,
             nuevaInfraccion.ubicacion,
             nuevaInfraccion.id_vehiculo,
             nuevaInfraccion.id_agente,
-            nuevaInfraccion.id_licencia
+            nuevaInfraccion.id_licencia,
+            nuevaInfraccion.ubicacion_infractor
         ];
 
         let errorHappened = false;
+        let client;
         try {
             // Iniciamos un rollback por si sucede un error dentro de los siguientes funciones
             // ocupamos un solo cliente para poder ligar todos los queries
-            const client = await pool.connect();
+            client = await pool.connect();
             client.query('BEGIN');
 
             const response = await client.query(query, values);
             const infraccion_id = response.rows[0].id_infraccion;
 
 
-            createAsociacionInfraccion(req, res, client, infraccion_id, infracciones);
+            await createAsociacionInfraccion(req, res, client, infraccion_id, infracciones);
+
+            await createEvidencias(infraccion_id, evidencias);
 
             const lineaCaptura = await getLineaCaptura(req, res, infraccion_id);
 
@@ -104,7 +102,7 @@ export const createInfraccion = async (req, res) => {
             UPDATE "infracciones" 
             SET "linea_captura" = $1 
             WHERE "id_infraccion" = $2
-        `;
+            `;
             const valuesLineaCaptura = [lineaCaptura, infraccion_id];
 
             await pool.query(queryLineaCaptura, valuesLineaCaptura);
