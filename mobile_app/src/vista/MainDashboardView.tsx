@@ -4,6 +4,7 @@ import {
   BookOpen,
   Camera, Clock,
   FileText,
+  LogOut,
   Menu,
   Search, ShieldAlert,
   Truck,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react-native';
 import React from 'react';
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -29,7 +31,28 @@ import { globalStyles } from '../styles/globalStyles';
 
 export default function MainDashboardView() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = () => {
+    Alert.alert(
+      "Cerrar Sesión",
+      "¿Está seguro que desea finalizar su turno?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Cerrar Sesión", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert("Error", "No se pudo cerrar la sesión");
+            }
+          }
+        }
+      ]
+    );
+  };
   
   return (
     <SafeAreaView style={styles.container}>
@@ -44,7 +67,14 @@ export default function MainDashboardView() {
             <Text style={styles.headerSubtitle}>SECRETARÍA DE SEGURIDAD CIUDADANA</Text>
           </View>
         </View>
-        <Bell size={20} color={COLORS.warning} />
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.headerIconBtn}>
+            <Bell size={20} color={COLORS.warning} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIconBtn} onPress={handleSignOut}>
+            <LogOut size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -193,6 +223,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: 'white', fontSize: FONT_SIZE.sm, fontWeight: '900', letterSpacing: 0.5 },
   headerSubtitle: { color: 'white', fontSize: 8, opacity: 0.8, fontWeight: 'bold' },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  headerIconBtn: { padding: 4 },
   
   scrollContent: { padding: SPACING.lg, paddingBottom: 100 },
   
