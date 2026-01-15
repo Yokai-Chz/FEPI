@@ -65,3 +65,37 @@ export const createUbicacion = async (req, res) => {
         return null;
     }
 };
+
+
+export const createUbicacionDirect = async (ubicacionData) => {
+    const { municipio, vialidad, numero_exterior, nombre_asentamiento, codigo_postal, nombre_entidad} = ubicacionData;
+
+    try {
+        const query = `
+            INSERT INTO ubicacion (
+                "vialidad", 
+                "numero_exterior", 
+                "nombre_asentamiento", 
+                "codigo_postal", 
+                "municipio", 
+                "nombre_entidad"
+            ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_ubicacion`;
+
+        const values = [
+            vialidad,
+            numero_exterior,
+            nombre_asentamiento,
+            codigo_postal,
+            municipio,
+            nombre_entidad
+        ];
+
+        const result = await pool.query(query, values);
+        
+        return result.rows[0].id_ubicacion;
+
+    } catch (error) {
+        console.error("Error en createUbicacionDirect:", error.message);
+        return null;
+    }
+}

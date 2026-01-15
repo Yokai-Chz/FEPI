@@ -39,11 +39,23 @@ CREATE TABLE infracciones (
     id_infraccion SERIAL PRIMARY KEY,
     linea_captura VARCHAR(40),
     fecha VARCHAR(30),
-    ubicacion INTEGER REFERENCES ubicacion(id_ubicacion), 
+    ubicacion_infraccion INTEGER REFERENCES ubicacion(id_ubicacion), 
     vehiculo_infraccionado VARCHAR(15),
     id_usuario INTEGER REFERENCES usuarios(id_usuario),
+    ubicacion_infractor INTEGER REFERENCES ubicacion(id_ubicacion),
     licencia_infractor VARCHAR(25),
-    estatus_pago BOOLEAN DEFAULT FALSE,
+    estatus_pago BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE evidencias (
+    id_evidencia SERIAL PRIMARY KEY,
+    archivo TEXT
+);
+
+CREATE TABLE infracciones_evidencias (
+    id_infraccion INTEGER REFERENCES infracciones(id_infraccion),
+    id_evidencia INTEGER REFERENCES evidencias(id_evidencia),
+    PRIMARY KEY (id_infraccion, id_evidencia)
 );
 
 CREATE TABLE asociacion_infracciones (
