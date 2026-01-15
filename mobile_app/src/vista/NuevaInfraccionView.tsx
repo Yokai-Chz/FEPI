@@ -22,6 +22,7 @@ import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
 import InfractionSelector, { InfractionArticle } from '../../components/infraccion/InfractionSelector';
 import EvidencePreview from '../../components/infraccion/EvidencePreview';
 import { useInfraccion } from '../context/InfraccionContext';
+import { isValidCDMXPlate } from '../utils/plateValidation';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
@@ -29,6 +30,8 @@ export default function NuevaInfraccionView() {
 
   // --- ESTADOS ---
   const [placa, setPlaca] = useState("");
+  const [esForaneo, setEsForaneo] = useState(false);
+  const [notas, setNotas] = useState("");
   const [articulosSeleccionados, setArticulosSeleccionados] = useState<InfractionArticle[]>([]);
   
   // Ubicación y GPS
@@ -39,8 +42,13 @@ export default function NuevaInfraccionView() {
   const [esComercial, setEsComercial] = useState(false);
 
   // Validación
+  const isPlateValid = esForaneo ? placa.length >= 3 : isValidCDMXPlate(placa);
+  // Si es foráneo, la nota (documento retenido) es obligatoria
+  const isNotesValid = esForaneo ? notas.trim().length > 3 : true;
+
   const esFormularioValido = 
-    placa.trim().length >= 3 && 
+    isPlateValid &&
+    isNotesValid &&
     articulosSeleccionados.length > 0 && 
     ubicacion.trim().length >= 5;
 
@@ -96,6 +104,8 @@ export default function NuevaInfraccionView() {
   const finalizarBoleta = () => {
     console.log("Enviando al backend:", {
       placa,
+      esForaneo,
+      notas, // Documento retenido
       infracciones: articulosSeleccionados,
       gps: coordenadas,
       fotos: fotos // Aquí van las URIs temporales
@@ -142,6 +152,8 @@ export default function NuevaInfraccionView() {
           <VehiclePlateInput 
             value={placa} 
             onChange={setPlaca} 
+            isForeign={esForaneo}
+            onForeignChange={setEsForaneo}
           />
 
           {/* SECCIÓN MOTIVO */}
@@ -195,6 +207,25 @@ export default function NuevaInfraccionView() {
             </View>
           </View>
 
+          {/* Notas / Garantía (Opcional o Requerido si es foráneo) */}
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>
+              {esForaneo ? "DOCUMENTO RETENIDO (GARANTÍA) *" : "OBSERVACIONES / NOTAS"}
+            </Text>
+            <TextInput
+              style={[styles.notesInput, esForaneo && !isNotesValid && styles.inputError]}
+              value={notas}
+              onChangeText={setNotas}
+              placeholder={esForaneo ? "Especifique Placa o Licencia retenida..." : "Opcional..."}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+            {esForaneo && !isNotesValid && (
+              <Text style={styles.errorText}>* Requerido para vehículos foráneos</Text>
+            )}
+          </View>
+
         </ScrollView>
 
         {/* Botón Final */}
@@ -242,5 +273,9 @@ const styles = StyleSheet.create({
   mainBtn: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 16, alignItems: 'center', elevation: 8 },
   mainBtnDisabled: { backgroundColor: '#e5e7eb', elevation: 0 },
   mainBtnText: { color: 'white', fontWeight: '900', letterSpacing: 2, fontSize: 14 },
-  mainBtnTextDisabled: { color: '#9ca3af' }
+  mainBtnTextDisabled: { color: '#9ca3af' },
+
+  notesInput: { fontSize: 14, color: '#374151', backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, minHeight: 80, borderWidth: 1, borderColor: '#e5e7eb' },
+  inputError: { borderColor: '#dc2626', backgroundColor: '#fef2f2' },
+  errorText: { color: '#dc2626', fontSize: 11, marginTop: 4, fontWeight: 'bold' }
 });
