@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
-  SafeAreaView, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  SafeAreaView,
   Alert,
   Platform,
   KeyboardAvoidingView,
@@ -21,21 +21,38 @@ import * as Location from 'expo-location';
 import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
 import InfractionSelector, { InfractionArticle } from '../../components/infraccion/InfractionSelector';
 import EvidencePreview from '../../components/infraccion/EvidencePreview';
+import { useAuth } from '../context/AuthContext';
 import { useInfraccion } from '../context/InfraccionContext';
 import { isValidCDMXPlate } from '../utils/plateValidation';
+import { infraccionesService } from '../services/infracciones.service';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
+  const { user } = useAuth();
   const { fotos, resetFotos } = useInfraccion();
 
   // --- ESTADOS ---
+  const [enviando, setEnviando] = useState(false);
   const [placa, setPlaca] = useState("");
   const [esForaneo, setEsForaneo] = useState(false);
+  const [niv, setNiv] = useState("");
+  const [licencia, setLicencia] = useState("");
+  
+  // Domicilio del conductor (infractor)
+  const [domicilioInfractor, setDomicilioInfractor] = useState({
+    municipio: "",
+    vialidad: "",
+    numero_exterior: "",
+    nombre_asentamiento: "",
+    codigo_postal: "",
+    nombre_entidad: ""
+  });
+
   const [notas, setNotas] = useState("");
   const [articulosSeleccionados, setArticulosSeleccionados] = useState<InfractionArticle[]>([]);
   
-  // Ubicación y GPS
-  const [ubicacion, setUbicacion] = useState("");
+  // Ubicación del HECHO (GPS)
+  const [ubicacionHecho, setUbicacionHecho] = useState("");
   const [coordenadas, setCoordenadas] = useState<{lat: number, lon: number} | null>(null);
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
 
@@ -43,47 +60,47 @@ export default function NuevaInfraccionView() {
 
   // Validación
   const isPlateValid = esForaneo ? placa.length >= 3 : isValidCDMXPlate(placa);
-  // Si es foráneo, la nota (documento retenido) es obligatoria
   const isNotesValid = esForaneo ? notas.trim().length > 3 : true;
+  const isNivValid = niv.trim().length === 0 || niv.length === 17; 
+  const isLicenciaValid = licencia.trim().length === 0 || licencia.length >= 5; 
 
   const esFormularioValido = 
+    !enviando &&
     isPlateValid &&
     isNotesValid &&
+    isNivValid &&
+    isLicenciaValid &&
     articulosSeleccionados.length > 0 && 
-    ubicacion.trim().length >= 5;
+    ubicacionHecho.trim().length >= 5;
 
   // --- FUNCIONES ---
   
   useEffect(() => {
-    obtenerUbicacion();
-    // No reseteamos fotos al montar para permitir volver de la cámara sin perder datos
-    // resetFotos() se llamaría al enviar exitosamente o salir
+    obtenerUbicacionActual();
   }, []);
 
-  const obtenerUbicacion = async () => {
+  const obtenerUbicacionActual = async () => {
     setCargandoUbicacion(true);
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para registrar la infracción.');
+        Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para registrar el lugar del hecho.');
         setCargandoUbicacion(false);
         return;
       }
 
-      // Obtener Coordenadas
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
       setCoordenadas({ lat: latitude, lon: longitude });
 
-      // Geocodificación Inversa (Coords -> Dirección)
       let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
       
       if (addressResponse.length > 0) {
         const addr = addressResponse[0];
-        const direccionFormateada = `${addr.street || 'Calle desconocida'} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.city || ''}`;
-        setUbicacion(direccionFormateada.trim());
+        const direccionFormateada = `${addr.street || ''} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.subregion || addr.city || ''}`;
+        setUbicacionHecho(direccionFormateada.trim());
       } else {
-        setUbicacion(`${latitude}, ${longitude}`);
+        setUbicacionHecho(`${latitude}, ${longitude}`);
       }
 
     } catch (error) {
@@ -101,27 +118,50 @@ export default function NuevaInfraccionView() {
     setArticulosSeleccionados((prev) => prev.filter(a => a.id !== id));
   };
 
-  const finalizarBoleta = () => {
-    console.log("Enviando al backend:", {
-      placa,
-      esForaneo,
-      notas, // Documento retenido
-      infracciones: articulosSeleccionados,
-      gps: coordenadas,
-      fotos: fotos // Aquí van las URIs temporales
-    });
+  const finalizarBoleta = async () => {
+    setEnviando(true);
+    try {
+      const evidenciasArray = Object.values(fotos).filter(uri => uri !== null) as string[];
 
-    Alert.alert(
-      "Éxito", 
-      `✅ Folio generado.\nGPS: ${coordenadas?.lat.toFixed(4)}, ${coordenadas?.lon.toFixed(4)}`,
-      [{ 
-        text: "OK", 
-        onPress: () => {
-          resetFotos(); // Limpiar fotos tras éxito
-          router.replace('/dashboard');
-        } 
-      }]
-    );
+      const dataToSend = {
+        fecha: new Date().toISOString(),
+        latitud: coordenadas?.lat || 0,
+        longitud: coordenadas?.lon || 0,
+        placa: placa,
+        niv: niv.trim() || null,
+        id_agente: user?.id || "ANONYMOUS", 
+        id_licencia: licencia.trim() || null,
+        descripcion: notas || "Sin observaciones adicionales",
+        infracciones: articulosSeleccionados.map(a => a.id),
+        ubicacion_infractor: {
+          municipio: domicilioInfractor.municipio.trim() || null,
+          vialidad: domicilioInfractor.vialidad.trim() || null,
+          numero_exterior: domicilioInfractor.numero_exterior.trim() || null,
+          nombre_asentamiento: domicilioInfractor.nombre_asentamiento.trim() || null,
+          codigo_postal: domicilioInfractor.codigo_postal.trim() || null,
+          nombre_entidad: domicilioInfractor.nombre_entidad.trim() || null
+        },
+        evidencias: evidenciasArray
+      };
+
+      await infraccionesService.crearInfraccion(dataToSend, user?.token || "");
+
+      Alert.alert(
+        "Éxito", 
+        `✅ Infracción registrada.\n${!coordenadas ? '(Guardada localmente por falta de conexión)' : ''}`,
+        [{ 
+          text: "Terminar", 
+          onPress: () => {
+            resetFotos(); 
+            router.replace('/dashboard');
+          } 
+        }]
+      );
+    } catch (error) {
+      Alert.alert("Error", "No se pudo procesar la infracción");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -156,6 +196,99 @@ export default function NuevaInfraccionView() {
             onForeignChange={setEsForaneo}
           />
 
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>IDENTIFICACIÓN ADICIONAL</Text>
+            
+            <Text style={styles.rowLabel}>NIV (Número de Identificación Vehicular)</Text>
+            <TextInput
+              style={[styles.ubiInput, { marginBottom: 16 }]}
+              value={niv}
+              onChangeText={text => setNiv(text.toUpperCase())}
+              placeholder="17 Caracteres"
+              maxLength={17}
+              autoCapitalize="characters"
+            />
+
+            <Text style={styles.rowLabel}>No. LICENCIA DE CONDUCIR</Text>
+            <TextInput
+              style={styles.ubiInput}
+              value={licencia}
+              onChangeText={text => setLicencia(text.toUpperCase())}
+              placeholder="Número de Licencia"
+              autoCapitalize="characters"
+            />
+          </View>
+
+          {/* NUEVA SECCIÓN: DOMICILIO DEL CONDUCTOR */}
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>DOMICILIO DEL CONDUCTOR (OPCIONAL)</Text>
+            
+            <View style={styles.grid2}>
+              <View style={{ flex: 1.5, marginRight: 8 }}>
+                <Text style={styles.rowLabel}>Calle / Vialidad</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.vialidad}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, vialidad: text})}
+                  placeholder="Ej. Av. Reforma"
+                />
+              </View>
+              <View style={{ flex: 0.5 }}>
+                <Text style={styles.rowLabel}>No. Ext</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.numero_exterior}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, numero_exterior: text})}
+                  placeholder="222"
+                />
+              </View>
+            </View>
+
+            <View style={[styles.grid2, { marginTop: 12 }]}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.rowLabel}>Colonia / Asentamiento</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.nombre_asentamiento}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, nombre_asentamiento: text})}
+                  placeholder="Ej. Juárez"
+                />
+              </View>
+              <View style={{ flex: 0.6 }}>
+                <Text style={styles.rowLabel}>C.P.</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.codigo_postal}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, codigo_postal: text})}
+                  placeholder="06600"
+                  keyboardType="numeric"
+                  maxLength={5}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.grid2, { marginTop: 12 }]}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.rowLabel}>Alcaldía / Municipio</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.municipio}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, municipio: text})}
+                  placeholder="Cuauhtémoc"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Entidad</Text>
+                <TextInput
+                  style={styles.ubiInput}
+                  value={domicilioInfractor.nombre_entidad}
+                  onChangeText={text => setDomicilioInfractor({...domicilioInfractor, nombre_entidad: text})}
+                  placeholder="CDMX"
+                />
+              </View>
+            </View>
+          </View>
+
           {/* SECCIÓN MOTIVO */}
           <InfractionSelector
             selectedArticles={articulosSeleccionados}
@@ -180,22 +313,22 @@ export default function NuevaInfraccionView() {
             </TouchableOpacity>
           </View>
 
-          {/* Ubicación */}
+          {/* Ubicación del Hecho */}
           <View style={styles.card}>
             <View style={styles.ubiHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>UBICACIÓN ACTUAL (GPS)</Text>
+                <Text style={styles.sectionLabel}>LUGAR DE LOS HECHOS (GPS)</Text>
                 <TextInput
                   style={styles.ubiInput}
-                  value={ubicacion}
-                  onChangeText={setUbicacion}
+                  value={ubicacionHecho}
+                  onChangeText={setUbicacionHecho}
                   multiline
                   placeholder="Obteniendo ubicación..."
                 />
               </View>
               <TouchableOpacity 
                 style={styles.ubiIconBtn} 
-                onPress={obtenerUbicacion}
+                onPress={obtenerUbicacionActual}
                 disabled={cargandoUbicacion}
               >
                 {cargandoUbicacion ? (
@@ -207,7 +340,7 @@ export default function NuevaInfraccionView() {
             </View>
           </View>
 
-          {/* Notas / Garantía (Opcional o Requerido si es foráneo) */}
+          {/* Notas / Garantía */}
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>
               {esForaneo ? "DOCUMENTO RETENIDO (GARANTÍA) *" : "OBSERVACIONES / NOTAS"}
@@ -235,9 +368,13 @@ export default function NuevaInfraccionView() {
             disabled={!esFormularioValido}
             onPress={finalizarBoleta}
           >
-            <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
-              {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
-            </Text>
+            {enviando ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
+                {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -258,14 +395,16 @@ const styles = StyleSheet.create({
   cardRow: { backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionLabel: { color: '#691C32', fontWeight: '900', fontSize: 11, marginBottom: 16, letterSpacing: 1 },
   
-  rowLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151' },
+  rowLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151', marginBottom: 4 },
+  grid2: { flexDirection: 'row', justifyContent: 'space-between' },
+
   switch: { width: 48, height: 24, backgroundColor: '#e5e7eb', borderRadius: 12, padding: 2 },
   switchOn: { backgroundColor: '#691C32' },
   switchDot: { width: 20, height: 20, backgroundColor: 'white', borderRadius: 10 },
   switchDotOn: { alignSelf: 'flex-end' },
 
   ubiHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  ubiInput: { fontSize: 12, fontWeight: 'bold', color: '#4b5563', backgroundColor: '#f9fafb', borderRadius: 12, padding: 12 },
+  ubiInput: { fontSize: 12, fontWeight: 'bold', color: '#4b5563', backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#f3f4f6' },
   ubiIconBtn: { width: 48, height: 48, backgroundColor: '#f9fafb', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   ubiIcon: { width: 30, height: 30 },
 
