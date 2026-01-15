@@ -91,14 +91,19 @@ Autentica a un usuario y devuelve un token JWT.
 
 #### `POST /users`
 
-Crea un nuevo usuario en la base de datos.
+Crea un nuevo usuario en la base de datos (con datos personales).
 
 -   **Valores Esperados (Request Body):**
     ```json
     {
-        "username": "nuevousuario",
-        "password": "contraseña_segura",
-        "email": "usuario@example.com"
+        "nombre": "Juan",
+        "apellido_paterno": "Perez",
+        "apellido_materno": "Lopez",
+        "curp": "PELO800101HDFRRN09",
+        "rfc": "PELO800101XXX",
+        "username": "juanperez",
+        "password": "securepassword",
+        "tipo_usuario": "oficial"
     }
     ```
 
@@ -106,15 +111,57 @@ Crea un nuevo usuario en la base de datos.
     Retorna el objeto del usuario creado.
     ```json
     {
-        "id": 1,
-        "username": "nuevousuario",
-        "email": "usuario@example.com",
-        "password": "hash_de_la_contraseña"
+        "id_usuario": 1,
+        "username": "juanperez",
+        "tipo_usuario": "oficial"
     }
     ```
 
 -   **Respuestas de Error:**
-    -   **Código 409:** `{"error": "User already exists."}` (Si el usuario o email ya existe)
+    -   **Código 409:** `{"error": "User already exists."}` (Si el usuario, CURP o RFC ya existe)
+
+#### `GET /users`
+Obtiene la lista de usuarios activos.
+
+-   **Respuesta Exitosa (Código 200):**
+    ```json
+    [
+        {
+            "id_usuario": 1,
+            "id_persona": 5,
+            "username": "juanperez",
+            "tipo_usuario": "oficial",
+            "borrado": false
+        },
+        ...
+    ]
+    ```
+
+#### `GET /users/:id`
+Obtiene un usuario por ID.
+
+-   **Respuesta Exitosa (Código 200):** Objeto de usuario completo.
+-   **Respuesta Error (404):** `{"error": "Usuario no encontrado"}`
+
+#### `PUT /users/:id`
+Actualiza datos personales (Persona) asociados al usuario.
+
+-   **Valores Esperados (Request Body):**
+    ```json
+    {
+        "nombre": "Juan Carlos",
+        "apellido_paterno": "Perez",
+        "apellido_materno": "Diaz",
+        "curp": "...",
+        "rfc": "..."
+    }
+    ```
+-   **Respuesta Exitosa (Código 200):** "Successfully updated"
+
+#### `DELETE /users/:id`
+Baja lógica de usuario (Soft delete).
+
+-   **Respuesta Exitosa (Código 204):** No content.
 
 ---
 
@@ -122,7 +169,7 @@ Crea un nuevo usuario en la base de datos.
 
 #### `POST /infracciones`
 
-Crea una nueva infracción. Este endpoint internamente gestiona la ubicación, el vehículo y el folio.
+Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, validación de vehículo, asociación de infracciones del catálogo y generación de línea de captura externa.
 
 -   **Valores Esperados (Request Body):**
     ```json
@@ -135,7 +182,16 @@ Crea una nueva infracción. Este endpoint internamente gestiona la ubicación, e
         "id_agente": "AGENTE-001",
         "id_licencia": "LIC-XYZ",
         "descripcion": "Exceso de velocidad.",
-        "infracciones": [1, 5, 12]
+        "infracciones": ["ART-01", "ART-04"],
+        "ubicacion_infractor": {
+             "municipio": "Cuauhtémoc",
+             "vialidad": "Reforma",
+             "numero_exterior": "222",
+             "nombre_asentamiento": "Juárez",
+             "codigo_postal": "06600",
+             "nombre_entidad": "CDMX"
+        },
+        "evidencias": ["base64string...", "base64string..."]
     }
     ```
 
@@ -143,23 +199,15 @@ Crea una nueva infracción. Este endpoint internamente gestiona la ubicación, e
     ```json
     {
         "mensaje": "Infracción creada exitosamente",
-        "infraccion": {
-            "folioInfraccion": "...",
-            "lineaCaptura": "...",
-            "fecha": "...",
-            "ubicacion": { ... },
-            "id_vehiculo": "...",
-            "id_agente": "...",
-            "descripcion": "...",
-            "id_licencia": "..."
-        }
+        "id_infraccion": 12345,
+        "linea_captura": "12345678901234567890"
     }
     ```
 
 -   **Respuestas de Error:**
     -   **Código 400:** `{"error": "Faltan latitud o longitud en el JSON"}`
-    -   **Código 400:** `{"error": "Faltan placa o niv en el JSON"}`
-    -   **Código 500:** `{"error": "Error en el servidor al crear la infracción"}`
+    -   **Código 400:** `{"error": "Faltan placa y niv en el JSON"}`
+    -   **Código 500:** `{"error": "Sucedio un error al insertar la infraccion"}`
 
 
 ### Catálogo
@@ -173,16 +221,14 @@ Obtiene el catálogo completo de infracciones desde la base de datos.
     ```json
     [
         {
-            "id": 1,
-            "motivo": "Exceso de velocidad",
-            "sancion": "5 UMA"
+            "id_catalogo_infracciones": 1,
+            "articulo": "ART-01",
+            "fraccion": "I",
+            "descripcion": "Exceso de velocidad",
+            "monto": "100.00"
         },
-        {
-            "id": 2,
-            "motivo": "No respetar luz roja",
-            "sancion": "10 UMA"
-        }
+        ...
     ]
     ```
 -   **Respuestas de Error:**
-    -   **Código 500:** `{"error": "Database query error"}`
+    -   **Código 500:** `{"error": "Error al obtener el catálogo"}`

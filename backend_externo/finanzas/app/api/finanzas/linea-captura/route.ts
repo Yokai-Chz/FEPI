@@ -7,11 +7,34 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const UMA_VALOR = 108.57;
 
-const CATALOGO_MULTAS: Record<string, { descripcion: string; umas: number }> = {
-  'ART-09': { descripcion: 'Exceso de velocidad', umas: 10 },
-  'ART-10': { descripcion: 'Estacionamiento prohibido', umas: 5 },
-  'ART-12': { descripcion: 'Falta de documentos', umas: 20 },
-  'ART-60': { descripcion: 'Conductor distraido (Celular)', umas: 30 },
+const CATALOGO_MULTAS: Record<string, { descripcion: string; umas: number | string }> = {
+  'ART-06': { descripcion: 'No respetar preferencia de paso o prioridad de uso de peatones', umas: 20 },
+  'ART-07-I': { descripcion: 'Insultar, denigrar o golpear al personal de tránsito', umas: 30 },
+  'ART-07-III': { descripcion: 'Uso indebido del claxon o provocar ruido excesivo con el motor', umas: 10 },
+  'ART-08-I': { descripcion: 'No obedecer indicaciones de agentes o señalización vial', umas: 20 },
+  'ART-08-V': { descripcion: 'Rebasar por la derecha o no dar 1.50m de distancia a ciclistas/motociclistas', umas: 10 },
+  'ART-09-I': { descripcion: 'Exceder límites de velocidad en carriles centrales (Máx. 80 km/h)', umas: 20 },
+  'ART-09-II': { descripcion: 'Exceder límites de velocidad en vías primarias (Máx. 50 km/h)', umas: 20 },
+  'ART-09-V': { descripcion: 'Exceder velocidad en zonas escolares o de hospitales (Máx. 20 km/h)', umas: 20 },
+  'ART-10-VI': { descripcion: 'No respetar la luz roja del semáforo o invadir cruce peatonal', umas: 20 },
+  'ART-11-VIII': { descripcion: 'Dar vuelta en "U" en lugares prohibidos o cerca de curvas', umas: 30 },
+  'ART-11-X-A': { descripcion: 'Circular sobre carriles exclusivos para el transporte público', umas: 60 },
+  'ART-11-XIV': { descripcion: 'Circular detrás de vehículos de emergencia (distancia < 50m)', umas: 30 },
+  'ART-21-I': { descripcion: 'Motocicletas: Circular sobre aceras o áreas peatonales', umas: 20 },
+  'ART-21-II': { descripcion: 'Motocicletas: Circular por vías ciclistas exclusivas', umas: 30 },
+  'ART-30-I': { descripcion: 'Estacionarse sobre banquetas, cruces peatonales o ciclovías', umas: 20 },
+  'ART-30-XII': { descripcion: 'Estacionarse en doble o más filas', umas: 20 },
+  'ART-30-XV': { descripcion: 'Estacionarse en lugares para personas con discapacidad', umas: 30 },
+  'ART-34-II': { descripcion: 'Organizar o participar en arrancones (competencias de velocidad)', umas: 30 },
+  'ART-37-II-B': { descripcion: 'No utilizar el cinturón de seguridad (conductor y pasajeros)', umas: 10 },
+  'ART-38-II-C': { descripcion: 'Cargar personas o animales entre brazos y piernas al conducir', umas: 20 },
+  'ART-38-II-E': { descripcion: 'Utilizar teléfono celular o dispositivos móviles al conducir', umas: 35 },
+  'ART-39': { descripcion: 'Transportar menores de 12 años sin sistema de retención infantil', umas: 10 },
+  'ART-43-VII': { descripcion: 'Instalar película de control solar (polarizado) mayor al 20%', umas: 30 },
+  'ART-44-I': { descripcion: 'No portar licencia de conducir o permiso vigente', umas: 20 },
+  'ART-45': { descripcion: 'No contar con placas o tarjeta de circulación vigente', umas: 30 },
+  'ART-46': { descripcion: 'No contar con póliza de seguro de responsabilidad civil vigente', umas: 40 },
+  'ART-50': { descripcion: 'Conducir bajo influjo de alcohol (>0.4 mg/l aire) o narcóticos', umas: 'Arresto' },
 };
 
 const PLACA_REGEX = /^[A-Z0-9]{2,3}-?[A-Z0-9]{2,3}-?[A-Z0-9]{0,2}$/i;
