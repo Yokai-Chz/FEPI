@@ -95,7 +95,7 @@ const CitizenLoginView = () => {
                 value={vin}
                 onChange={(e) => setVin(e.target.value)}
                 className="w-full bg-zinc-100 border-none rounded-2xl p-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-[#6b1d31]/20 outline-none transition-all tracking-[0.5em]"
-                placeholder="•••••"
+                placeholder="*****"
               />
             </div>
 
