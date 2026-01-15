@@ -17,7 +17,8 @@ export const createInfraccion = async (req, res) => {
             id_licencia, 
             infracciones, 
             ubicacion_infractor,
-            evidencias
+            evidencias, 
+            notas
         } = req.body;
 
         // Validamos que lleguen los datos del body
@@ -58,7 +59,8 @@ export const createInfraccion = async (req, res) => {
             id_vehiculo, 
             id_agente, 
             id_licencia: id_licencia || null,
-            ubicacion_infractor: ubicacion_infractor_id
+            ubicacion_infractor: ubicacion_infractor_id,
+            notas: notas || null
         };
 
         const query = `
@@ -68,8 +70,9 @@ export const createInfraccion = async (req, res) => {
                 "vehiculo_infraccionado", 
                 "id_usuario", 
                 "licencia_infractor",
-                "ubicacion_infractor" 
-            ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_infraccion`;
+                "ubicacion_infractor",
+                "notas" 
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_infraccion`;
 
         const values = [
             nuevaInfraccion.fecha,
@@ -77,7 +80,8 @@ export const createInfraccion = async (req, res) => {
             nuevaInfraccion.id_vehiculo,
             nuevaInfraccion.id_agente,
             nuevaInfraccion.id_licencia,
-            nuevaInfraccion.ubicacion_infractor
+            nuevaInfraccion.ubicacion_infractor,
+            nuevaInfraccion.notas
         ];
 
         let errorHappened = false;

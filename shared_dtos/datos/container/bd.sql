@@ -44,6 +44,7 @@ CREATE TABLE infracciones (
     id_usuario INTEGER REFERENCES usuarios(id_usuario),
     ubicacion_infractor INTEGER REFERENCES ubicacion(id_ubicacion),
     licencia_infractor VARCHAR(25),
+    notas TEXT,
     estatus_pago BOOLEAN DEFAULT FALSE
 );
 
