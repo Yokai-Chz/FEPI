@@ -1,4 +1,5 @@
 import { pool } from "../db.js";
+import axios from 'axios';
 
 // Helper: Calcular distancia (Haversine Formula) en Kilómetros
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -65,6 +66,40 @@ export const createSolicitud = async (req, res) => {
 
     let client;
     try {
+        // 0. Obtener detalles de ubicación con Google Maps API
+        let ubicacionDetails = {
+            vialidad: 'Desconocida',
+            numero_exterior: '',
+            asentamiento: '',
+            codigo_postal: '',
+            municipio: '',
+            entidad: 'CDMX',
+            coordenadas: `${latitud}, ${longitud}`
+        };
+
+        const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+        if (API_KEY) {
+            try {
+                const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitud},${longitud}&key=${API_KEY}`;
+                const googleResponse = await axios.get(googleUrl);
+
+                if (googleResponse.data.status === 'OK' && googleResponse.data.results.length > 0) {
+                    const components = googleResponse.data.results[0].address_components;
+                    const getComp = (type) => components.find(c => c.types.includes(type))?.long_name || '';
+
+                    ubicacionDetails.vialidad = getComp("route");
+                    ubicacionDetails.numero_exterior = getComp("street_number");
+                    ubicacionDetails.asentamiento = getComp("sublocality_level_1") || getComp("neighborhood");
+                    ubicacionDetails.codigo_postal = getComp("postal_code");
+                    ubicacionDetails.municipio = getComp("administrative_area_level_2");
+                    ubicacionDetails.entidad = getComp("administrative_area_level_1");
+                }
+            } catch (apiError) {
+                console.error("Error al consultar Google Maps API:", apiError.message);
+                // Continuamos con valores por defecto
+            }
+        }
+
         client = await pool.connect();
         await client.query('BEGIN');
 
@@ -128,11 +163,24 @@ export const createSolicitud = async (req, res) => {
         }
 
         // 4. Crear Ubicación de Origen para el registro
-        // Nota: En un sistema real usaríamos Google Maps API para obtener dirección, aquí guardamos coordenadas crudas
         const queryUbi = `
-            INSERT INTO ubicacion (coordenadas, nombre_entidad) VALUES ($1, 'CDMX') RETURNING id_ubicacion
+            INSERT INTO ubicacion (
+                vialidad, numero_exterior, nombre_asentamiento, codigo_postal, 
+                municipio, nombre_entidad, coordenadas
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7) 
+            RETURNING id_ubicacion
         `;
-        const resUbi = await client.query(queryUbi, [`${latitud}, ${longitud}`]);
+        const valuesUbi = [
+            ubicacionDetails.vialidad,
+            ubicacionDetails.numero_exterior,
+            ubicacionDetails.asentamiento,
+            ubicacionDetails.codigo_postal,
+            ubicacionDetails.municipio,
+            ubicacionDetails.entidad,
+            ubicacionDetails.coordenadas
+        ];
+        
+        const resUbi = await client.query(queryUbi, valuesUbi);
         const idUbicacionOrigen = resUbi.rows[0].id_ubicacion;
 
         // 5. Crear Solicitud
@@ -169,7 +217,8 @@ export const createSolicitud = async (req, res) => {
             asignacion: {
                 deposito: assignedDepot.nombre,
                 distancia_km: assignedDepot.distance.toFixed(2),
-                grua: assignedGrua.placas
+                grua: assignedGrua.placas,
+                ubicacion_origen: ubicacionDetails
             }
         });
 
