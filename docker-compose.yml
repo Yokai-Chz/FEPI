@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: fepi_db
+      POSTGRES_USER: fepi_user
+      POSTGRES_PASSWORD: fepi_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fepi-net
+
+  mock-server:
+    build:
+      context: ./backend_externo/mockServer
+    container_name: mock-server
+    ports:
+      - "8000:8000"
+    command: sh -c "python populate_db.py && uvicorn main:app --host 0.0.0.0 --port 8000"
+    networks:
+      - fepi-net
+
+  finanzas:
+    build:
+      context: ./backend_externo/finanzas
+    container_name: finanzas
+    ports:
+      - "3001:3001"
+    networks:
+      - fepi-net
+
+  backend-central:
+    build:
+      context: ./backend_central
+    container_name: backend-central
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DB_HOST=postgres_db
+      - DB_PORT=5432
+      - DB_USER=fepi_user
+      - DB_PASSWORD=fepi_password
+      - DB_NAME=fepi_db
+      - JWT_SECRET=mysecretkey
+      - API_FINANZAS=http://finanzas:3001/api/finanzas/linea-captura
+      - API_REPUVE=http://mock-server:8000/api/semovi/vehiculo
+      - API_SEMOVI_CONDUCTORES=http://mock-server:8000/api/semovi/licencia/
+    depends_on:
+      - postgres_db
+      - mock-server
+      - finanzas
+    networks:
+      - fepi-net
+
+networks:
+  fepi-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
