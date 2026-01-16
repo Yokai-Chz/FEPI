@@ -1,9 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-//import { API_CONFIG } from "./api.config";
+// import { API_CONFIG	} from "./api.config";
 
 export interface loginCredential {
-    username: string;
+    placa: string;
     password: string;
 }
 
@@ -18,13 +18,14 @@ export const authService = {
     async login(credentials: loginCredential): Promise<userData> {
         return new Promise((resolve, reject) => {
             setTimeout(async () => {
-                if (credentials.username === '982734' && credentials.password === '123456') {
+                if (credentials.placa === '982734' && credentials.password === '123456') {
                     const fakeUser: userData = {
                         id: '982734',
                         name: "Oficial Perez",
                         sector: "SECTOR JUAREZ",
                         token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake-token",
                     };
+
                     await this.saveSession(fakeUser.token, fakeUser.id);
                     resolve(fakeUser);
                     
@@ -34,23 +35,20 @@ export const authService = {
             },1500);
         });
         
-        //console.log('Sending login payload:', JSON.stringify(credentials, null, 2));
-        
-        //const response = await fetch(`${API_CONFIG.BASE_URL}/login`, {
-            //method: 'POST',
-            //headers: API_CONFIG.HEADERS,
-            //body: JSON.stringify(credentials),
-        //});
+        /*
+        const response = await fetch(`${API_CONFIG.BASE_URL}/login`, {
+            method: 'POST',
+            headers: API_CONFIG.HEADERS,
+            body: JSON.stringify(credentials),
+        });
 
-        //console.log(response);
+        if (!response.ok){
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Error de autenticación");
+        }
 
-
-        //if (!response.ok){
-            //const errorData = await response.json();
-            //throw new Error(errorData.message || "Error de autenticación");
-        //}
-
-        //return await response.json();
+        return await response.json();
+        */
     },
 
     async logout() {

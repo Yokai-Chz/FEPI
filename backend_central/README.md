@@ -173,31 +173,26 @@ Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, v
 
 -   **Valores Esperados (Request Body):**
     ```json
-{
-    "fecha": "2024-01-15T14:30:00Z",
-    "latitud": 19.503005, 
-    "longitud": -99.146881,
-    "placa": "A01-AAA",
-    "niv": "NIV1234567890",
-    "id_agente": 1,
-    "notas": "Estacionado en lugar prohibido",
-    "infracciones": ["ART-06"],
-    "id_licencia": "789456", 
-    "ubicacion_infractor": {
-        "municipio": "Cuauhtémoc",
-        "vialidad": "Av. Paseo de la Reforma",
-        "numero_exterior": "S/N",
-        "nombre_asentamiento": "Centro",
-        "codigo_postal": "06000",
-        "nombre_entidad": "Ciudad de México"
-    },
-    "evidencias": [
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUB...",
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUC...",
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUD..."
-    ]
-}
+    {
+        "fecha": "2024-01-01T12:00:00Z",
+        "latitud": 19.4326,
+        "longitud": -99.1332,
+        "placa": "ABC-123",
+        "niv": "1GKSKDEFGH1234567",
+        "id_agente": "AGENTE-001",
+        "id_licencia": "LIC-XYZ",
+        "descripcion": "Exceso de velocidad.",
+        "infracciones": ["ART-01", "ART-04"],
+        "ubicacion_infractor": {
+             "municipio": "Cuauhtémoc",
+             "vialidad": "Reforma",
+             "numero_exterior": "222",
+             "nombre_asentamiento": "Juárez",
+             "codigo_postal": "06600",
+             "nombre_entidad": "CDMX"
+        },
+        "evidencias": ["base64string...", "base64string..."]
+    }
     ```
 
 -   **Respuesta Exitosa (Código 201):**

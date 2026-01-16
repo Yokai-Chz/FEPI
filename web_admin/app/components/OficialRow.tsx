@@ -1,7 +1,24 @@
 import { Oficial } from '../../src/services/dashboard.service';
 
-export default function OficialRow({ oficial }: { oficial: Oficial }) {
+interface OficialRowProps {
+  oficial: Oficial;
+  onUpdateStatus: (oficialId: string, newStatus: 'AUTORIZADO' | 'INACTIVO') => void;
+}
+
+export default function OficialRow({ oficial, onUpdateStatus }: OficialRowProps) {
   const isAutorizado = oficial.estatusApp === 'AUTORIZADO';
+
+  const handleSuspend = () => {
+    if (confirm(`¿Está seguro de que desea SUSPENDER el acceso a la app para el oficial ${oficial.nombreCompleto}?`)) {
+      onUpdateStatus(oficial.id, 'INACTIVO');
+    }
+  };
+
+  const handleReactivate = () => {
+    if (confirm(`¿Está seguro de que desea REACTIVAR el acceso a la app para el oficial ${oficial.nombreCompleto}?`)) {
+      onUpdateStatus(oficial.id, 'AUTORIZADO');
+    }
+  };
 
   return (
     <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-sm">
@@ -20,10 +37,10 @@ export default function OficialRow({ oficial }: { oficial: Oficial }) {
           <div className="flex justify-end gap-3 text-[11px] font-black uppercase">
             <button className="text-gray-400 hover:text-gray-600">Editar</button>
             <span className="text-gray-200">|</span>
-            <button className="text-red-500 hover:text-red-700">Suspender</button>
+            <button onClick={handleSuspend} className="text-red-500 hover:text-red-700">Suspender</button>
           </div>
         ) : (
-          <button className="text-green-600 font-black text-[11px] uppercase hover:underline">
+          <button onClick={handleReactivate} className="text-green-600 font-black text-[11px] uppercase hover:underline">
             Reactivar
           </button>
         )}

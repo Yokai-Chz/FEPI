@@ -31,15 +31,12 @@ CREATE TABLE usuarios (
     id_persona INTEGER REFERENCES personas(id_persona),
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    tipo_usuario VARCHAR(20) CHECK (tipo_usuario IN ('admin', 'oficial', 'consulta')),
-    ultima_conexion VARCHAR(30) DEFAULT NULL,
-    token_version INTEGER DEFAULT 1,
+    tipo_usuario VARCHAR(20) CHECK (tipo_usuario IN ('admin', 'oficial', 'consulta')),    
     borrado BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE infracciones (
     id_infraccion SERIAL PRIMARY KEY,
-    folio VARCHAR(25) UNIQUE,
     linea_captura VARCHAR(40),
     fecha VARCHAR(30),
     ubicacion_infraccion INTEGER REFERENCES ubicacion(id_ubicacion), 
@@ -47,9 +44,7 @@ CREATE TABLE infracciones (
     id_usuario INTEGER REFERENCES usuarios(id_usuario),
     ubicacion_infractor INTEGER REFERENCES ubicacion(id_ubicacion),
     licencia_infractor VARCHAR(25),
-    notas TEXT,
-    estatus_pago BOOLEAN DEFAULT FALSE, 
-    borrado BOOLEAN DEFAULT FALSE
+    estatus_pago BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE evidencias (
@@ -99,6 +94,8 @@ VALUES
 ('ART-12', 'IX', 'Descripción de la infracción 9', '500.00'),
 ('ART-60', 'X', 'Descripción de la infracción 10', '550.00');
 
+
+
 -- Inserciones para la tabla personas
 INSERT INTO personas (nombre, apellido_paterno, apellido_materno, curp, rfc)
 VALUES
@@ -113,64 +110,33 @@ VALUES
 ('Miguel', 'Torres', 'Reyes', 'CURP009', 'RFC009'),
 ('Elena', 'Vargas', 'Morales', 'CURP010', 'RFC010');
 
--- Inserciones para la tabla usuarios //Contraseñas hasheadas con bcrypt (password: "securepassword")
-INSERT INTO usuarios (id_persona, username, password_hash, tipo_usuario)
+-- Inserciones para la tabla usuarios
+INSERT INTO usuarios (id_persona, username, password_hash, tipo_usuario, placa_oficial)
 VALUES
-(1, '11111', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin'),
-(2, '22222', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'oficial'),
-(3, '33333', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'consulta'),
-(4, '44444', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin'),
-(5, '55555', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'oficial'),
-(6, '66666', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'consulta'),
-(7, '77777', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin'),
-(8, '88888', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'oficial'),
-(9, '99999', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'consulta'),
-(10, '00000', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin');
+(1, 'juanp', 'hash1', 'admin', NULL),
+(2, 'mariag', 'hash2', 'oficial', 'P001'),
+(3, 'josel', 'hash3', 'consulta', NULL),
+(4, 'anam', 'hash4', 'admin', NULL),
+(5, 'luish', 'hash5', 'oficial', 'P002'),
+(6, 'laurag', 'hash6', 'consulta', NULL),
+(7, 'carlosd', 'hash7', 'admin', NULL),
+(8, 'sofiar', 'hash8', 'oficial', 'P003'),
+(9, 'miguelt', 'hash9', 'consulta', NULL),
+(10, 'elenav', 'hash10', 'admin', NULL);
 
 -- Inserciones para la tabla infracciones
-INSERT INTO infracciones (folio, linea_captura, fecha, ubicacion_infraccion, ubicacion_infractor, vehiculo_infraccionado, id_usuario, licencia_infractor, notas, estatus_pago)
+INSERT INTO infracciones (linea_captura, fecha, ubicacion, vehiculo_infraccionado, id_usuario, licencia_infractor)
 VALUES
-('INF-0000001', 'LC1', '2024-01-01', 1, 1, 'ABC-123', 2, 'LIC001', 'Sin notas', FALSE),
-('INF-0000002', 'LC2', '2024-01-02', 2, 2, 'DEF-456', 5, 'LIC002', 'Sin notas', FALSE),
-('INF-0000003', 'LC3', '2024-01-03', 3, 3, 'GHI-789', 8, 'LIC003', 'Sin notas', FALSE),
-('INF-0000004', 'LC4', '2024-01-04', 4, 4, 'JKL-101', 2, 'LIC004', 'Sin notas', FALSE),
-('INF-0000005', 'LC5', '2024-01-05', 5, 5, 'MNO-112', 5, 'LIC005', 'Sin notas', FALSE),
-('INF-0000006', 'LC6', '2024-01-06', 6, 6, 'PQR-131', 8, 'LIC006', 'Sin notas', FALSE),
-('INF-0000007', 'LC7', '2024-01-07', 7, 7, 'STU-415', 2, 'LIC007', 'Sin notas', FALSE),
-('INF-0000008', 'LC8', '2024-01-08', 8, 8, 'VWX-161', 5, 'LIC008', 'Sin notas', FALSE),
-('INF-0000009', 'LC9', '2024-01-09', 9, 9, 'YZA-718', 8, 'LIC009', 'Sin notas', FALSE),
-('INF-0000010', 'LC10', '2024-01-10', 10, 10, 'BCD-192', 2, 'LIC010', 'Sin notas', FALSE);
-
--- Inserciones para la tabla evidencias
-INSERT INTO evidencias (archivo)
-VALUES
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
-('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...');
-
--- Inserciones para la tabla infracciones_evidencias
-INSERT INTO infracciones_evidencias (id_infraccion, id_evidencia)
-VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 4),
-(5, 5),
-(6, 6),
-(7, 7),
-(8, 8),
-(9, 9),
-(10, 10);
+('LC1', '2024-01-01', 1, 'ABC-123', 2, 'LIC001'),
+('LC2', '2024-01-02', 2, 'DEF-456', 5, 'LIC002'),
+('LC3', '2024-01-03', 3, 'GHI-789', 8, 'LIC003'),
+('LC4', '2024-01-04', 4, 'JKL-101', 2, 'LIC004'),
+('LC5', '2024-01-05', 5, 'MNO-112', 5, 'LIC005'),
+('LC6', '2024-01-06', 6, 'PQR-131', 8, 'LIC006'),
+('LC7', '2024-01-07', 7, 'STU-415', 2, 'LIC007'),
+('LC8', '2024-01-08', 8, 'VWX-161', 5, 'LIC008'),
+('LC9', '2024-01-09', 9, 'YZA-718', 8, 'LIC009'),
+('LC10', '2024-01-10', 10, 'BCD-192', 2, 'LIC010');
 
 -- Inserciones para la tabla asociacion_infracciones
 INSERT INTO asociacion_infracciones (id_catalogo_infraccion, id_infraccion)

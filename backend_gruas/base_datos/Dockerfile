@@ -1,4 +1,4 @@
 FROM postgis/postgis
 
 WORKDIR /docker-entrypoint-initdb.d
-COPY db.sql .
+COPY bd.sql .

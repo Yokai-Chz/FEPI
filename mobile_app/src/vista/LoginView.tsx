@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  Image, 
+  KeyboardAvoidingView, 
+  Platform, 
+  SafeAreaView, 
   ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+  ActivityIndicator
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
@@ -32,7 +32,7 @@ export default function LoginView() {
     setError('');
     
     try {
-      await signIn({ username:placa, password });
+      await signIn({ placa, password });
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

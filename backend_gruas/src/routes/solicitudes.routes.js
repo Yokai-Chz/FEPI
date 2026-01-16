@@ -3,8 +3,6 @@ import { createSolicitud, getSolicitudes, updateSolicitudStatus } from "../contr
 
 const router = Router();
 
-console.log("Cargando rutas de solicitudes...");
-
 router.post("/solicitudes", createSolicitud);
 router.get("/solicitudes", getSolicitudes);
 router.put("/solicitudes/:id/status", updateSolicitudStatus);

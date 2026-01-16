@@ -11,6 +11,33 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    
+    # --- En database.py, dentro de init_db() ---
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS auditoria_cambios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_infraccion INTEGER,
+        usuario_admin TEXT,
+        accion TEXT, -- 'CORRECCION_PLACA', 'ANULACION'
+        valor_anterior TEXT,
+        valor_nuevo TEXT,
+        fecha_hora TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (id_infraccion) REFERENCES infracciones (id)
+    )
+    ''')
+    
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS oficiales (
+        id TEXT PRIMARY KEY,
+        placa TEXT UNIQUE,
+        nombre_completo TEXT,
+        sector TEXT,
+        password INTEGER NOT NULL, -- NIP para el Login
+        estatusApp TEXT DEFAULT 'AUTORIZADO' -- AUTORIZADO o INACTIVO
+    )
+    ''')
 
     # Table: Propietarios
     cursor.execute('''
@@ -18,6 +45,31 @@ def init_db():
         rfc TEXT PRIMARY KEY,
         nombre_completo TEXT,
         domicilio_fiscal TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+CREATE TABLE IF NOT EXISTS depositos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    zona TEXT NOT NULL,
+    capacidad_total INTEGER NOT NULL,
+    ocupacion_actual INTEGER DEFAULT 0,
+    estatus TEXT DEFAULT 'DISPONIBLE'
+)
+''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS infracciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        folio TEXT UNIQUE,
+        placa TEXT,
+        fecha_hora TEXT DEFAULT (datetime('now')),
+        id_oficial TEXT,
+        monto REAL,
+        estatus_pago TEXT DEFAULT 'PENDIENTE', -- PENDIENTE, PAGADO, IMPUGNADO
+        motivo TEXT,
+        evidencia_url TEXT
     )
     ''')
 

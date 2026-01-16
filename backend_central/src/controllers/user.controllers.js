@@ -1,13 +1,6 @@
 import { pool } from "../db.js";
 import bcrypt from "bcryptjs";
 
-
-/*
-    Funcion para la creacion de un nuevo usuario
-    1. Hashear la contrasena
-    2. Insertar los datos en la tabla personas
-    3. Insertar los datos en la tabla usuarios
-*/
 export const createUser = async (req, res) => {
 
     /*
@@ -50,10 +43,6 @@ export const createUser = async (req, res) => {
     }
 };
 
-
-/*
-    Funcion para obtener un usuario por su ID
-*/
 export const getUser = async (req, res) => {
     const userId = req.params.id;
     if (!userId) {
@@ -67,7 +56,7 @@ export const getUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "Usuario no encontrado" });
         }
-    
+        
         res.json(user);
     } catch (err) {
         console.error(err);
@@ -75,10 +64,6 @@ export const getUser = async (req, res) => {
     }  
 };
 
-
-/*
-    Funcion para eliminar un usuario por su ID (soft delete)
-*/
 export const deleteUser = async (req, res) => {
     const userId = req.params.id;
     if (!userId) {
@@ -94,10 +79,6 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-
-/*
-    Funcion para actualizar los datos de una persona asociada a un usuario
-*/
 export const updateUser = async (req, res) => {
     const userId = req.params.id;
     const { nombre, apellido_paterno, apellido_materno, curp, rfc } = req.body;
@@ -122,10 +103,6 @@ export const updateUser = async (req, res) => {
     }
 };
 
-
-/*
-    Funcion para obtener todos los usuarios no borrados
-*/
 export const getUsers = async (req, res) => {
     
     try {
@@ -137,52 +114,3 @@ export const getUsers = async (req, res) => {
         return res.status(500).json({ error: "Database error" });
     }   
 };
-
-
-/*
-    Funcion para actualizar la ultima conexion de un usuario
-*/
-export const updateLastConnection = async (userId) => {
-    try {
-        const timestamp = new Date().toISOString();
-        await pool.query(
-            `UPDATE usuarios SET ultima_conexion = $1 WHERE id_usuario = $2`,
-            [timestamp, userId]
-        );
-    } catch (err) {
-        console.error("Error updating last connection:", err);
-    }
-};
-
-
-/*
-    Funcion para actualizar la contrasena de un usuario
-    HU002: Incluye validaciones de seguridad
-*/
-export const updatePassword = async (req, res) => {
-    const userId = req.params.id;
-    const { newPassword } = req.body;
-
-    if (!newPassword || newPassword.length < 8) {
-        return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
-    }
-
-    // Regex: Al menos una mayúscula y un número
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).+$/;
-    if (!passwordRegex.test(newPassword)) {
-        return res.status(400).json({ error: "La contraseña debe contener al menos una mayúscula y un número" });
-    }
-
-    try {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await pool.query(
-            `UPDATE usuarios SET password_hash = $1 WHERE id_usuario = $2`,
-            [hashedPassword, userId]
-        );
-        res.status(200).json({ mensaje: "Contraseña actualizada exitosamente" });
-    } catch (err) {
-        console.error("Error updating password:", err);
-        res.status(500).json({ error: "Error al actualizar la contraseña" });
-    }
-}; 
-

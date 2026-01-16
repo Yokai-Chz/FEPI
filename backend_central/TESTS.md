@@ -107,29 +107,28 @@ Registra una infracción completa. Incluye validación de vehículo, geocodifica
     ```json
     {
         "fecha": "2024-01-15T14:30:00Z",
-        "latitud": 19.503005, 
-        "longitud": -99.146881,
-        "placa": "A01-AAA",
+        "latitud": 19.432608,
+        "longitud": -99.133209,
+        "placa": "ABC-123",
         "niv": "NIV1234567890",
         "id_agente": 1,
-        "notas": "Estacionado en lugar prohibido",
-        "infracciones": ["ART-06"],
-        "id_licencia": "789456", 
+        "id_licencia": "LIC-9999",
+        "descripcion": "Vehículo estacionado en lugar prohibido y exceso de velocidad.",
+        "infracciones": ["ART-01", "ART-02"], 
         "ubicacion_infractor": {
-            "municipio": "Cuauhtémoc",
-            "vialidad": "Av. Paseo de la Reforma",
-            "numero_exterior": "S/N",
-            "nombre_asentamiento": "Centro",
-            "codigo_postal": "06000",
-            "nombre_entidad": "Ciudad de México"
+             "municipio": "Cuauhtémoc",
+             "vialidad": "Av. Paseo de la Reforma",
+             "numero_exterior": "S/N",
+             "nombre_asentamiento": "Centro",
+             "codigo_postal": "06000",
+             "nombre_entidad": "Ciudad de México"
         },
         "evidencias": [
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUB...",
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUC...",
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUD..."
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
         ]
-    }    ```
+    }
+    ```
     > **Nota:** El campo `infracciones` recibe un array con los identificadores (artículos) del catálogo. `evidencias` espera cadenas en base64.
 
 ### Listar Infracciones

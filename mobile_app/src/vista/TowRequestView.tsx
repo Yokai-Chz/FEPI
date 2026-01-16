@@ -1,235 +1,216 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, View, Text, TouchableOpacity, 
-  SafeAreaView, ScrollView, Alert, ActivityIndicator, TextInput 
+  StyleSheet, View, Text, TextInput, TouchableOpacity, 
+  Image, SafeAreaView, ScrollView, Alert, ActivityIndicator 
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { MapPin, X, ShieldAlert, CheckCircle, Navigation } from 'lucide-react-native';
-import { useAuth } from '../context/AuthContext';
-
-import LocationInput from '../../components/infraccion/LocationInput';
+import { MapPin, ChevronRight, Clock, Building2, Car, X } from 'lucide-react-native';
 
 export default function TowRequestView() {
   const router = useRouter(); 
-  const params = useLocalSearchParams();
-  const { user } = useAuth();
-  
-  // Datos del inventario recibidos
-  const vehiculoData = params.vehiculo ? JSON.parse(params.vehiculo as string) : null;
 
-  // Folio de la infracción previamente creada (Ligado)
-  const FOLIO_INFRACCION = "INF-2026-8821"; 
-
-  // --- ESTADOS ---
-  const [ubicacion, setUbicacion] = useState<{
-    lat: number | null, 
-    lng: number | null,
-    direccion: string
-  }>({ 
-    lat: null, lng: null, direccion: "Obteniendo ubicación..." 
+  const [notas, setNotas] = useState('');
+  const [vehiculo, setVehiculo] = useState({
+    modelo: 'VOLKSWAGEN - JETTA 2022',
+    placa: '123-ABC-A'
   });
-  const [cargandoGPS, setCargandoGPS] = useState(true);
-  const [referencia, setReferencia] = useState("");
-  const [enviando, setEnviando] = useState(false);
-  const [servicioConfirmado, setServicioConfirmado] = useState<any>(null);
+
+  const [ubicacion, setUbicacion] = useState<any>({ lat: null, lng: null, cargando: true });
+  const [eta, setEta] = useState<number | null>(null);
+  const [corralonAsignado, setCorralonAsignado] = useState<any>(null);
+
+  const colors = { primary: '#691C32' };
+
+  const corralonesDisponibles = [
+    { id: 1, nombre: "Corralón Centro Histórico", direccion: "Eje Central Lázaro Cárdenas 12" },
+    { id: 2, nombre: "Depósito Vehicular Norte", direccion: "Av. Insurgentes Norte 450" },
+    { id: 3, nombre: "Corralón Oriente - Iztapalapa", direccion: "Calz. Ermita Iztapalapa 201" }
+  ];
 
   useEffect(() => {
-    obtenerGPS();
-  }, []);
-
-  const obtenerGPS = async () => {
-    try {
+    (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Error', 'Se requiere permiso de GPS para solicitar el arrastre.');
-        setUbicacion(prev => ({ ...prev, direccion: "Sin Permiso GPS" }));
-        setCargandoGPS(false);
+        setUbicacion({ lat: "19.432", lng: "-99.133", cargando: false });
+        setCorralonAsignado(corralonesDisponibles[0]);
+        setEta(15);
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const { latitude, longitude } = location.coords;
-
-      let direccionLegible = `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-      try {
-        let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
-        if (addressResponse.length > 0) {
-          const addr = addressResponse[0];
-          direccionLegible = `${addr.street || ''} ${addr.streetNumber || ''}, ${addr.district || ''}`;
-        }
-      } catch (error) {
-        console.log("Modo Offline");
-      }
-
+      let location = await Location.getCurrentPositionAsync({});
       setUbicacion({
-        lat: latitude,
-        lng: longitude,
-        direccion: direccionLegible
+        lat: location.coords.latitude.toFixed(5),
+        lng: location.coords.longitude.toFixed(5),
+        cargando: false
       });
+      
+      const asignado = corralonesDisponibles[Math.floor(Math.random() * corralonesDisponibles.length)];
+      setCorralonAsignado(asignado);
+      setEta(Math.floor(Math.random() * (12 - 4 + 1)) + 4);
+    })();
+  }, []);
 
-    } catch (e) {
-      Alert.alert('Error GPS', 'No se pudieron obtener las coordenadas.');
-      setUbicacion(prev => ({ ...prev, direccion: "Error de Ubicación" }));
-    } finally {
-      setCargandoGPS(false);
-    }
-  };
-
-  const enviarPeticion = () => {
-    if (!ubicacion.lat || !ubicacion.lng) {
-      Alert.alert("Error", "No hay señal de GPS válida.");
+  const manejarEnvio = () => {
+    if (!vehiculo.modelo || !vehiculo.placa) {
+      Alert.alert("Error", "El modelo y la placa son obligatorios para el arrastre.");
       return;
     }
-
-    setEnviando(true);
     
-    // JSON PARA EL SERVIDOR
-    const jsonPeticion = {
-      folio_infraccion: FOLIO_INFRACCION,
-      id_agente: user?.id,
-      sector_oficial: user?.sector,
-      coordenadas: {
-        lat: ubicacion.lat,
-        lng: ubicacion.lng
-      },
-      referencia_manual: referencia,
-      inventario: vehiculoData
-    };
-
-    console.log("JSON DE PETICIÓN:", JSON.stringify(jsonPeticion, null, 2));
-
-    setTimeout(() => {
-      setEnviando(false);
-      setServicioConfirmado({
-        folio_grua: `GR-${Math.floor(Math.random()*9000)+1000}`,
-        corralon: "Depósito Vehicular Asignado por Proximidad",
-        unidad: "T-104 (Plataforma)"
-      });
-    }, 2000);
-  };
-
-  if (servicioConfirmado) {
-    return (
-      <SafeAreaView style={styles.containerSuccess}>
-        <View style={styles.successContent}>
-          <CheckCircle size={80} color="#16a34a" />
-          <Text style={styles.successTitle}>GRÚA SOLICITADA</Text>
-          <Text style={styles.successFolio}>FOLIO: {servicioConfirmado.folio_grua}</Text>
-          
-          <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>ASIGNACIÓN DEL SERVIDOR</Text>
-            <Text style={styles.infoValue}>{servicioConfirmado.corralon}</Text>
-            <View style={styles.divider} />
-            <Text style={styles.infoLabel}>UNIDAD EN CAMINO</Text>
-            <Text style={styles.infoValue}>{servicioConfirmado.unidad}</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={styles.mainBtn} 
-            onPress={() => router.replace('/dashboard')}
-          >
-            <Text style={styles.btnText}>VOLVER AL MENÚ</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+    Alert.alert(
+      "Solicitud Exitosa",
+      `Grúa en camino.\n\nDepósito: ${corralonAsignado?.nombre}\nETA: ${eta} minutos.`,
+      [{ text: "OK", onPress: () => router.replace('/dashboard') }]
     );
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <ShieldAlert size={24} color="white" />
-          <Text style={styles.headerTitle}>CONFIRMAR ARRASTRE</Text>
+          <View style={styles.logoBox}>
+            <Image source={require('../../assets/images/logo_gobierno.png')} style={styles.logo} />
+          </View>
+          <Text style={styles.headerTitle}>SOLICITAR GRÚA</Text>
         </View>
-        <TouchableOpacity onPress={() => router.back()} disabled={enviando}>
+        <TouchableOpacity onPress={() => router.replace('/dashboard')}>
           <X color="white" size={28} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* COMPONENTE REUTILIZADO */}
-        <LocationInput 
-          label="UBICACIÓN DE RECOLECCIÓN"
-          value={ubicacion.direccion}
-          subValue={ubicacion.lat ? `Lat: ${ubicacion.lat.toFixed(6)} | Lng: ${ubicacion.lng?.toFixed(6)}` : undefined}
-          onRefresh={obtenerGPS}
-          isLoading={cargandoGPS}
-          readOnly={true}
-        />
-
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>REFERENCIAS ADICIONALES</Text>
-          <Text style={styles.inputLabel}>¿DÓNDE EXACTAMENTE DEBE RECOGER EL VEHÍCULO?</Text>
-          <TextInput 
-            style={styles.inputRef} 
-            placeholder="Ej. Frente a tienda OXXO, sentido poniente..."
-            value={referencia}
-            onChangeText={setReferencia}
-            multiline
-          />
-        </View>
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>VINCULADO A:</Text>
-          <Text style={styles.summaryText}>• Multa: {FOLIO_INFRACCION}</Text>
-          <Text style={styles.summaryText}>• Vehículo: {vehiculoData?.placa}</Text>
-          <Text style={styles.summaryText}>• Oficial: {user?.id} ({user?.sector})</Text>
-        </View>
-
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.mainBtn, (enviando || cargandoGPS) && styles.btnDisabled]}
-          onPress={enviarPeticion}
-          disabled={enviando || cargandoGPS}
-        >
-          {enviando ? (
-            <ActivityIndicator color="white" />
+      <ScrollView>
+        {/* Mapa Simulado */}
+        <View style={styles.mapContainer}>
+          {ubicacion.cargando ? (
+            <View style={styles.centered}>
+              <ActivityIndicator color="#9ca3af" />
+              <Text style={styles.loadingText}>LOCALIZANDO...</Text>
+            </View>
           ) : (
-            <Text style={styles.btnText}>SOLICITAR ARRASTRE</Text>
+            <View style={styles.mapMock}>
+              <View style={styles.pinContainer}>
+                <MapPin size={24} color="white" />
+              </View>
+              <View style={styles.coordBadge}>
+                <Text style={styles.coordText}>COORD: {ubicacion.lat}, {ubicacion.lng}</Text>
+              </View>
+            </View>
           )}
-        </TouchableOpacity>
-      </View>
+        </View>
+
+        <View style={styles.content}>
+          {/* Card Vehículo */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.sectionTitle}><Car size={14} color={colors.primary} /> DATOS DEL VEHÍCULO</Text>
+              <View style={styles.statusBadge}><Text style={styles.statusBadgeText}>VERIFICAR</Text></View>
+            </View>
+            
+            <View style={styles.inputGap}>
+              <Text style={styles.label}>MODELO Y AÑO:</Text>
+              <TextInput 
+                style={styles.input}
+                value={vehiculo.modelo}
+                onChangeText={(t) => setVehiculo({...vehiculo, modelo: t.toUpperCase()})}
+              />
+              <Text style={[styles.label, {marginTop: 10}]}>PLACAS:</Text>
+              <TextInput 
+                style={[styles.input, styles.placaInput]}
+                value={vehiculo.placa}
+                onChangeText={(t) => setVehiculo({...vehiculo, placa: t.toUpperCase()})}
+              />
+            </View>
+          </View>
+
+          {/* Corralón */}
+          <View style={styles.infoRow}>
+            <View style={styles.iconBox}>
+              <Building2 size={20} color={colors.primary} />
+            </View>
+            <View style={{flex: 1}}>
+              <Text style={styles.label}>DEPÓSITO ASIGNADO</Text>
+              <Text style={styles.infoValue}>{corralonAsignado ? corralonAsignado.nombre : 'Buscando...'}</Text>
+            </View>
+            <ChevronRight size={18} color="#d1d5db" />
+          </View>
+
+          {/* Notas */}
+          <View style={styles.card}>
+            <Text style={styles.label}>OBSERVACIONES DEL ARRASTRE:</Text>
+            <TextInput 
+              style={styles.textArea}
+              value={notas}
+              onChangeText={setNotas}
+              placeholder="Motivo de la solicitud..."
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          {/* Botón y ETA */}
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              onPress={manejarEnvio}
+              disabled={ubicacion.cargando}
+              style={[styles.mainBtn, ubicacion.cargando && {backgroundColor: '#d1d5db'}]}
+            >
+              <Text style={styles.mainBtnText}>
+                {ubicacion.cargando ? 'OBTENIENDO UBICACIÓN...' : 'CONFIRMAR SOLICITUD'}
+              </Text>
+            </TouchableOpacity>
+
+            {eta && !ubicacion.cargando && (
+              <View style={styles.etaRow}>
+                <Clock size={14} color={colors.primary} />
+                <Text style={styles.etaText}>
+                  TIEMPO ESTIMADO: <Text style={{color: '#1f2937'}}>{eta} MINUTOS</Text>
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f3f4f6' },
-  containerSuccess: { flex: 1, backgroundColor: '#f0fdf4', justifyContent: 'center' },
   header: { backgroundColor: '#691C32', padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerTitle: { color: 'white', fontWeight: 'bold', fontSize: 14, letterSpacing: 1 },
-  scrollContent: { padding: 16 },
-  
-  card: { backgroundColor: 'white', borderRadius: 16, padding: 20, marginBottom: 16, elevation: 2 },
-  sectionLabel: { color: '#691C32', fontWeight: '900', fontSize: 10, marginBottom: 16, letterSpacing: 1 },
-  
-  gpsRow: { flexDirection: 'row', gap: 15, alignItems: 'center', marginBottom: 20 },
-  gpsIconBox: { width: 44, height: 44, backgroundColor: '#fdf2f8', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  coordValue: { fontSize: 15, fontWeight: '900', color: '#1f2937', letterSpacing: 0.5 },
-  
-  inputLabel: { fontSize: 10, fontWeight: 'bold', color: '#6b7280', marginBottom: 8 },
-  inputRef: { backgroundColor: '#f9fafb', padding: 15, borderRadius: 10, fontSize: 13, borderWidth: 1, borderColor: '#e5e7eb', minHeight: 80, textAlignVertical: 'top' },
+  logoBox: { width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  logo: { width: 35, height: 35, resizeMode: 'contain' },
+  headerTitle: { color: 'white', fontWeight: 'bold', fontSize: 13, letterSpacing: 1 },
 
-  summaryCard: { padding: 16, backgroundColor: '#e5e7eb', borderRadius: 12 },
-  summaryLabel: { fontSize: 10, fontWeight: 'bold', color: '#4b5563', marginBottom: 6 },
-  summaryText: { fontSize: 12, fontWeight: 'bold', color: '#1f2937', marginBottom: 2 },
+  mapContainer: { h: 180, height: 180, backgroundColor: '#e2e8f0', borderBottomWidth: 1, borderBottomColor: '#cbd5e1' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 },
+  loadingText: { fontSize: 9, fontWeight: 'bold', color: '#9ca3af' },
+  mapMock: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#cbd5e1' },
+  pinContainer: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#691C32', borderWeight: 4, borderColor: 'white', justifyContent: 'center', alignItems: 'center', elevation: 5 },
+  coordBadge: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 8 },
+  coordText: { fontSize: 8, fontWeight: '900', color: '#4b5563' },
 
-  successContent: { padding: 30, alignItems: 'center' },
-  successTitle: { fontSize: 24, fontWeight: '900', color: '#15803d', marginTop: 20 },
-  successFolio: { fontSize: 16, fontWeight: 'bold', color: '#166534', marginBottom: 30 },
-  infoCard: { width: '100%', backgroundColor: 'white', borderRadius: 20, padding: 24, elevation: 4, marginBottom: 30 },
-  infoLabel: { fontSize: 9, fontWeight: 'bold', color: '#9ca3af', marginBottom: 4 },
-  infoValue: { fontSize: 16, fontWeight: '900', color: '#1f2937', marginBottom: 16 },
-  divider: { height: 1, backgroundColor: '#f3f4f6', marginBottom: 16 },
+  content: { padding: 16, gap: 16 },
+  card: { backgroundColor: 'white', borderRadius: 20, padding: 20, elevation: 2 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 11, fontWeight: '900', color: '#691C32', letterSpacing: 1 },
+  statusBadge: { backgroundColor: '#fffbeb', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#fef3c7' },
+  statusBadgeText: { fontSize: 8, color: '#d97706', fontWeight: 'bold' },
+  
+  label: { fontSize: 9, color: '#9ca3af', fontWeight: 'bold', marginBottom: 6, letterSpacing: 0.5 },
+  input: { backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, fontSize: 13, fontWeight: 'bold', color: '#374151' },
+  placaInput: { letterSpacing: 3 },
+  
+  infoRow: { backgroundColor: 'white', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 1 },
+  iconBox: { width: 40, height: 40, backgroundColor: '#f9fafb', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  infoValue: { fontSize: 12, fontWeight: '900', color: '#1f2937' },
 
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'white' },
-  mainBtn: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 16, alignItems: 'center', width: '100%' },
-  btnDisabled: { backgroundColor: '#e5e7eb' },
-  btnText: { color: 'white', fontWeight: '900', letterSpacing: 1, fontSize: 14 }
+  textArea: { backgroundColor: '#f9fafb', borderRadius: 12, padding: 15, fontSize: 12, textAlignVertical: 'top' },
+  
+  footer: { marginTop: 8, paddingBottom: 40 },
+  mainBtn: { backgroundColor: '#691C32', padding: 20, borderRadius: 20, alignItems: 'center', elevation: 4 },
+  mainBtnText: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2 },
+  etaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 },
+  etaText: { fontSize: 10, fontWeight: 'bold', color: '#9ca3af' }
 });

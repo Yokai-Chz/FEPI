@@ -1,6 +1,5 @@
 import { pool } from "../db.js";
 import axios from 'axios';
-import { randomBytes } from 'crypto';
 
 // Helper: Calcular distancia (Haversine Formula) en Kilómetros
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -18,29 +17,6 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 
 function deg2rad(deg) {
     return deg * (Math.PI / 180);
-}
-
-// Helper: Determinar tipo de grúa según el vehículo
-function determinarTipoGrua(tipoVehiculo) {
-    if (!tipoVehiculo) return 'Tipo A'; // Default
-    
-    const tipo = tipoVehiculo.toUpperCase();
-    
-    // Lógica basada en reglamento (simplificada)
-    if (['BICICLETA', 'MOTOCICLETA', 'COMPACTO', 'SEDAN', 'HATCHBACK'].some(t => tipo.includes(t))) {
-        return 'Tipo A'; // Hasta 3.5 ton
-    }
-    if (['CAMIONETA', 'SUV', 'VAN', 'PICKUP'].some(t => tipo.includes(t))) {
-        return 'Tipo B'; // Hasta 6 ton
-    }
-    if (['CAMION', 'AUTOBUS', 'MICROBUS'].some(t => tipo.includes(t))) {
-        return 'Tipo C'; // Hasta 12 ton
-    }
-    if (['TRAILER', 'TRACTOCAMION', 'MAQUINARIA'].some(t => tipo.includes(t))) {
-        return 'Tipo D'; // Alto tonelaje
-    }
-    
-    return 'Tipo A'; // Default si no coincide
 }
 
 // Helper: Validar Horario (Básico)
@@ -72,36 +48,21 @@ function isDepotOpen(horarioStr) {
 }
 
 export const createSolicitud = async (req, res) => {
-    // Desestructuración plana según README
     const { 
-        latitud,
-        longitud,
-        placas_vehiculo,
-        marca_vehiculo,
-        color_vehiculo,
-        tipo_vehiculo,
+        latitud, 
+        longitud, 
+        placas_vehiculo, 
+        marca_vehiculo, 
+        color_vehiculo, 
+        tipo_vehiculo, 
         motivo_arrastre,
         id_infraccion_vinculada,
-        observaciones,
-        // Campos opcionales / adicionales
-        id_agente,
-        referencia_manual,
-        tiene_llaves,
-        es_foraneo,
-        inventario_detalles 
+        observaciones 
     } = req.body;
 
-    // Validación básica
     if (!latitud || !longitud) {
-        return res.status(400).json({ error: "Se requieren latitud y longitud para asignar el servicio." });
+        return res.status(400).json({ error: "Se requieren coordenadas (latitud, longitud) para asignar el servicio." });
     }
-
-    if (!placas_vehiculo || !tipo_vehiculo) {
-        return res.status(400).json({ error: "Se requieren placas y tipo de vehículo." });
-    }
-
-    // Determinamos qué tipo de grúa se necesita (A, B, C, D)
-    const tipoGruaRequerida = determinarTipoGrua(tipo_vehiculo);
 
     let client;
     try {
@@ -176,33 +137,29 @@ export const createSolicitud = async (req, res) => {
         let assignedGrua = null;
         let assignedDepot = null;
 
-        // 3. Buscar Grúa Disponible del TIPO REQUERIDO en el depósito más cercano
+        // 3. Buscar Grúa Disponible en el depósito más cercano
         for (const depot of candidates) {
             const queryGrua = `
-                SELECT g.id_grua, g.placas, ctg.tipo 
+                SELECT g.id_grua, g.placas 
                 FROM gruas g
                 JOIN asociacion_grua_deposito agd ON g.id_grua = agd.id_grua
-                JOIN cat_tipo_grua ctg ON g.id_tipo_grua = ctg.id_tipo_grua
                 WHERE agd.id_deposito = $1 
                   AND g.estado = 'DISPONIBLE'
                   AND agd.activo = true
-                  AND ctg.tipo = $2
                 LIMIT 1
             `;
-            const resGrua = await client.query(queryGrua, [depot.id_deposito, tipoGruaRequerida]);
+            const resGrua = await client.query(queryGrua, [depot.id_deposito]);
             
             if (resGrua.rows.length > 0) {
                 assignedGrua = resGrua.rows[0];
                 assignedDepot = depot;
-                break; // Encontramos el par (Depósito Cercano - Grúa Disponible del Tipo Correcto)
+                break; // Encontramos el par (Depósito Cercano - Grúa Disponible)
             }
         }
 
         if (!assignedGrua || !assignedDepot) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ 
-                error: `No hay grúas ${tipoGruaRequerida} disponibles cercanas o los depósitos están llenos/cerrados.` 
-            });
+            return res.status(404).json({ error: "No hay grúas disponibles cercanas o los depósitos están llenos/cerrados." });
         }
 
         // 4. Crear Ubicación de Origen para el registro
@@ -227,41 +184,21 @@ export const createSolicitud = async (req, res) => {
         const idUbicacionOrigen = resUbi.rows[0].id_ubicacion;
 
         // 5. Crear Solicitud
-        // Generamos un folio corto y único (ej. FOL-A1B2C3D4)
-        const folio = `FOL-${randomBytes(4).toString('hex').toUpperCase()}`; 
+        const folio = `FOL-${Date.now()}`; // Generación simple de folio
         const fechaSolicitud = new Date().toISOString();
 
         const queryInsert = `
             INSERT INTO solicitudes_arrastre (
                 folio, fecha_solicitud, id_grua, id_deposito_destino, id_ubicacion_origen,
                 placas_vehiculo, marca_vehiculo, color_vehiculo, tipo_vehiculo,
-                id_agente, referencia_manual, tiene_llaves, es_foraneo, inventario_detalles,
-                observaciones, id_infraccion_vinculada, motivo_arrastre, estatus_servicio
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'ASIGNADO')
+                id_infraccion_vinculada, motivo_arrastre, estatus_servicio, observaciones
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'ASIGNADO', $12)
             RETURNING *
         `;
-        
-        // Convertimos el inventario a string JSON para guardarlo en JSONB
-        const inventarioJson = JSON.stringify(inventario_detalles || {});
-
         const valuesInsert = [
-            folio, 
-            fechaSolicitud, 
-            assignedGrua.id_grua, 
-            assignedDepot.id_deposito, 
-            idUbicacionOrigen,
-            placas_vehiculo, 
-            marca_vehiculo, 
-            color_vehiculo, 
-            tipo_vehiculo,
-            id_agente,
-            referencia_manual,
-            tiene_llaves,
-            es_foraneo,
-            inventarioJson,
-            observaciones,
-            id_infraccion_vinculada,
-            motivo_arrastre
+            folio, fechaSolicitud, assignedGrua.id_grua, assignedDepot.id_deposito, idUbicacionOrigen,
+            placas_vehiculo, marca_vehiculo, color_vehiculo, tipo_vehiculo,
+            id_infraccion_vinculada, motivo_arrastre, observaciones
         ];
         
         const resSolicitud = await client.query(queryInsert, valuesInsert);
@@ -274,12 +211,6 @@ export const createSolicitud = async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Cálculo simple de tiempo estimado (Velocidad promedio 30 km/h en ciudad)
-        const velocidadPromedio = 30; 
-        const tiempoHoras = assignedDepot.distance / velocidadPromedio;
-        const tiempoMinutos = Math.ceil(tiempoHoras * 60);
-
-        // Respuesta formateada según README
         res.status(201).json({
             mensaje: "Solicitud creada y recursos asignados correctamente",
             solicitud: resSolicitud.rows[0],
@@ -287,7 +218,7 @@ export const createSolicitud = async (req, res) => {
                 deposito: assignedDepot.nombre,
                 distancia_km: assignedDepot.distance.toFixed(2),
                 grua: assignedGrua.placas,
-                tiempo_estimado: `${tiempoMinutos} min`
+                ubicacion_origen: ubicacionDetails
             }
         });
 

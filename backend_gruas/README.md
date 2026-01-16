@@ -43,21 +43,12 @@ Crea una solicitud y asigna automáticamente la grúa/depósito más cercano.
         "latitud": 19.3625,
         "longitud": -99.1628,
         "placas_vehiculo": "XYZ-987",
-        "marca_vehiculo": "Nissan Versa",
+        "marca_vehiculo": "Nissan",
         "color_vehiculo": "Rojo",
         "tipo_vehiculo": "Sedan",
         "motivo_arrastre": "Estacionamiento prohibido",
-        "id_infraccion_vinculada": 12345,
-        "observaciones": "Vehículo con cristales abajo",
-        "id_agente": "AG-9920",
-        "referencia_manual": "Frente a la salida de emergencia del hospital",
-        "tiene_llaves": false,
-        "es_foraneo": false,
-        "inventario_detalles": {
-            "golpes": "Puerta izquierda rayada",
-            "objetos_valor": "Radio original",
-            "llanta_refaccion": true
-        }
+        "id_infraccion_vinculada": 123,
+        "observaciones": "Vehículo con cristales abajo"
     }
     ```
 -   **Respuesta (201 Created):**
@@ -68,8 +59,7 @@ Crea una solicitud y asigna automáticamente la grúa/depósito más cercano.
         "asignacion": {
             "deposito": "Depósito Vehicular Módulo 39",
             "distancia_km": "2.45",
-            "grua": "GR-001",
-            "tiempo_estimado": "5 min"
+            "grua": "GR-001"
         }
     }
     ```
@@ -118,19 +108,7 @@ Actualiza el estado de un servicio (ej. de ASIGNADO a EN_DEPOSITO).
         "estado": "DISPONIBLE"
     }
     ```
--   **Respuesta (201 Created):**
-    ```json
-    {
-        "id_grua": 5,
-        "placas": "GR-123",
-        "no_economico": "ECO-500",
-        "id_tipo_grua": 2,
-        "marca": "Ford",
-        "modelo": "F-550",
-        "anio": 2022,
-        "estado": "DISPONIBLE"
-    }
-    ```
+-   **Respuesta (201 Created):** Objeto de la grúa creada.
 
 #### `GET /gruas`
 -   **Respuesta (200 OK):** Lista de grúas con detalles de su tipo.
