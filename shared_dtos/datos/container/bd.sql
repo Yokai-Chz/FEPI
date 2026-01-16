@@ -48,8 +48,23 @@ CREATE TABLE infracciones (
     ubicacion_infractor INTEGER REFERENCES ubicacion(id_ubicacion),
     licencia_infractor VARCHAR(25),
     notas TEXT,
-    estatus_pago BOOLEAN DEFAULT FALSE, 
+    estatus VARCHAR(20) DEFAULT 'ACTIVA' CHECK (estatus IN ('ACTIVA', 'PAGADA', 'ANULADA')),
     borrado BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE auditoria_infracciones (
+    id_auditoria SERIAL PRIMARY KEY,
+    id_infraccion INTEGER NOT NULL REFERENCES infracciones(id_infraccion),
+    id_usuario_modificador INTEGER NOT NULL REFERENCES usuarios(id_usuario),
+    fecha_modificacion VARCHAR(30),
+    campo_modificado VARCHAR(50) NOT NULL,
+    valor_anterior TEXT,
+    valor_nuevo TEXT,
+    tipo_modificacion VARCHAR(50) NOT NULL,
+    justificacion TEXT,
+    id_usuario_autorizador INTEGER REFERENCES usuarios(id_usuario),
+    fecha_autorizacion TIMESTAMP WITH TIME ZONE,
+    estatus_autorizacion VARCHAR(20) DEFAULT 'PENDIENTE' CHECK (estatus_autorizacion IN ('PENDIENTE', 'APROBADO', 'RECHAZADO'))
 );
 
 CREATE TABLE evidencias (
@@ -128,18 +143,18 @@ VALUES
 (10, '00000', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin');
 
 -- Inserciones para la tabla infracciones
-INSERT INTO infracciones (folio, linea_captura, fecha, ubicacion_infraccion, ubicacion_infractor, vehiculo_infraccionado, id_usuario, licencia_infractor, notas, estatus_pago)
+INSERT INTO infracciones (folio, linea_captura, fecha, ubicacion_infraccion, ubicacion_infractor, vehiculo_infraccionado, id_usuario, licencia_infractor, notas)
 VALUES
-('INF-0000001', 'LC1', '2024-01-01', 1, 1, 'ABC-123', 2, 'LIC001', 'Sin notas', FALSE),
-('INF-0000002', 'LC2', '2024-01-02', 2, 2, 'DEF-456', 5, 'LIC002', 'Sin notas', FALSE),
-('INF-0000003', 'LC3', '2024-01-03', 3, 3, 'GHI-789', 8, 'LIC003', 'Sin notas', FALSE),
-('INF-0000004', 'LC4', '2024-01-04', 4, 4, 'JKL-101', 2, 'LIC004', 'Sin notas', FALSE),
-('INF-0000005', 'LC5', '2024-01-05', 5, 5, 'MNO-112', 5, 'LIC005', 'Sin notas', FALSE),
-('INF-0000006', 'LC6', '2024-01-06', 6, 6, 'PQR-131', 8, 'LIC006', 'Sin notas', FALSE),
-('INF-0000007', 'LC7', '2024-01-07', 7, 7, 'STU-415', 2, 'LIC007', 'Sin notas', FALSE),
-('INF-0000008', 'LC8', '2024-01-08', 8, 8, 'VWX-161', 5, 'LIC008', 'Sin notas', FALSE),
-('INF-0000009', 'LC9', '2024-01-09', 9, 9, 'YZA-718', 8, 'LIC009', 'Sin notas', FALSE),
-('INF-0000010', 'LC10', '2024-01-10', 10, 10, 'BCD-192', 2, 'LIC010', 'Sin notas', FALSE);
+('INF-0000001', 'LC1', '2024-01-01', 1, 1, 'ABC-123', 2, 'LIC001', 'Sin notas'),
+('INF-0000002', 'LC2', '2024-01-02', 2, 2, 'DEF-456', 5, 'LIC002', 'Sin notas'),
+('INF-0000003', 'LC3', '2024-01-03', 3, 3, 'GHI-789', 8, 'LIC003', 'Sin notas'),
+('INF-0000004', 'LC4', '2024-01-04', 4, 4, 'JKL-101', 2, 'LIC004', 'Sin notas'),
+('INF-0000005', 'LC5', '2024-01-05', 5, 5, 'MNO-112', 5, 'LIC005', 'Sin notas'),
+('INF-0000006', 'LC6', '2024-01-06', 6, 6, 'PQR-131', 8, 'LIC006', 'Sin notas'),
+('INF-0000007', 'LC7', '2024-01-07', 7, 7, 'STU-415', 2, 'LIC007', 'Sin notas'),
+('INF-0000008', 'LC8', '2024-01-08', 8, 8, 'VWX-161', 5, 'LIC008', 'Sin notas'),
+('INF-0000009', 'LC9', '2024-01-09', 9, 9, 'YZA-718', 8, 'LIC009', 'Sin notas'),
+('INF-0000010', 'LC10', '2024-01-10', 10, 10, 'BCD-192', 2, 'LIC010', 'Sin notas');
 
 -- Inserciones para la tabla evidencias
 INSERT INTO evidencias (archivo)

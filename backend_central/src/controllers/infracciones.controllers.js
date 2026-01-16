@@ -278,6 +278,7 @@ export const getInfraccionById = async (req, res) => {
             id_licencia: infraccion.licencia_infractor,
             ubicacion_infractor: ubicacionInfractorDetalle,
             evidencias: evidencias,
+            estatus: infraccion.estatus,
         };
 
         res.json(formattedInfraccion);
@@ -342,5 +343,133 @@ export const deleteInfraccion = async (req, res) => {
     } catch (error) {
         console.error("Error deleting infraccion:", error.message);
         res.status(500).json({ error: "Error al borrar la infracción" });
+    }
+};
+
+// HU007: Modificación de Infracciones (Placa)
+export const modificarInfraccionPlaca = async (req, res) => {
+    const { id } = req.params;
+    const { placa, justificacion } = req.body;
+    const id_usuario_modificador = req.user.id_usuario; 
+
+    if (!placa || !justificacion) {
+        return res.status(400).json({ error: "Se requiere la nueva placa y una justificación." });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // 1. Obtener la infracción actual
+        const infraccionResult = await client.query('SELECT vehiculo_infraccionado FROM infracciones WHERE id_infraccion = $1 AND borrado = false', [id]);
+        if (infraccionResult.rows.length === 0) {
+            return res.status(404).json({ error: "Infracción no encontrada." });
+        }
+        const valor_anterior = infraccionResult.rows[0].vehiculo_infraccionado;
+
+        // Validación simple de la diferencia de caracteres
+        const diff = placa.split('').filter((char, i) => char !== valor_anterior[i]).length;
+        if (diff > 3) {
+            return res.status(400).json({ error: "La corrección de la placa no puede exceder los 3 caracteres." });
+        }
+
+        // 2. Actualizar la infracción
+        await client.query('UPDATE infracciones SET vehiculo_infraccionado = $1 WHERE id_infraccion = $2', [placa, id]);
+
+        // 3. Registrar en auditoría (auto-aprobado por ahora)
+        const auditQuery = `
+            INSERT INTO auditoria_infracciones 
+            (id_infraccion, id_usuario_modificador, campo_modificado, valor_anterior, valor_nuevo, tipo_modificacion, justificacion, id_usuario_autorizador, fecha_autorizacion, estatus_autorizacion)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'APROBADO')`;
+        await client.query(auditQuery, [id, id_usuario_modificador, 'vehiculo_infraccionado', valor_anterior, placa, 'CORRECCION', justificacion, id_usuario_modificador, new Date().toISOString()]);
+
+        await client.query('COMMIT');
+        res.json({ mensaje: "Placa de la infracción actualizada y auditada correctamente." });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Error al modificar la placa de la infracción:", error.message);
+        res.status(500).json({ error: "Error interno al modificar la infracción." });
+    } finally {
+        client.release();
+    }
+};
+
+// HU007: Anular Infracción
+export const anularInfraccion = async (req, res) => {
+    const { id } = req.params;
+    const { justificacion } = req.body;
+    const id_usuario_modificador = req.user.id_usuario;
+
+    if (!justificacion) {
+        return res.status(400).json({ error: "Se requiere una justificación para anular la infracción." });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // 1. Obtener el estado actual
+        const infraccionResult = await client.query('SELECT estatus FROM infracciones WHERE id_infraccion = $1 AND borrado = false', [id]);
+        if (infraccionResult.rows.length === 0) {
+            return res.status(404).json({ error: "Infracción no encontrada." });
+        }
+        const valor_anterior = infraccionResult.rows[0].estatus;
+
+        if (valor_anterior === 'ANULADA') {
+            return res.status(400).json({ error: "La infracción ya ha sido anulada." });
+        }
+
+        // 2. Actualizar el estado de la infracción
+        await client.query('UPDATE infracciones SET estatus = $1 WHERE id_infraccion = $2', ['ANULADA', id]);
+
+        // 3. Registrar en auditoría (auto-aprobado por ahora)
+        const auditQuery = `
+            INSERT INTO auditoria_infracciones 
+            (id_infraccion, id_usuario_modificador, campo_modificado, valor_anterior, valor_nuevo, tipo_modificacion, justificacion, id_usuario_autorizador, fecha_autorizacion, estatus_autorizacion)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'APROBADO')`;
+        await client.query(auditQuery, [id, id_usuario_modificador, 'estatus', valor_anterior, 'ANULADA', 'ANULACION', justificacion, id_usuario_modificador, new Date().toISOString()]);
+
+        await client.query('COMMIT');
+        res.json({ mensaje: "Infracción anulada y auditada correctamente." });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Error al anular la infracción:", error.message);
+        res.status(500).json({ error: "Error interno al anular la infracción." });
+    } finally {
+        client.release();
+    }
+};
+
+// HU008: Auditoría de Cambios
+export const getHistorialInfraccion = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                a.fecha_modificacion,
+                a.campo_modificado,
+                a.valor_anterior,
+                a.valor_nuevo,
+                a.tipo_modificacion,
+                a.justificacion,
+                u_mod.username AS modificado_por,
+                u_aut.username AS autorizado_por,
+                a.estatus_autorizacion
+            FROM auditoria_infracciones a
+            JOIN usuarios u_mod ON a.id_usuario_modificador = u_mod.id_usuario
+            LEFT JOIN usuarios u_aut ON a.id_usuario_autorizador = u_aut.id_usuario
+            WHERE a.id_infraccion = $1
+            ORDER BY a.fecha_modificacion DESC`;
+        
+        const result = await pool.query(query, [id]);
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al obtener el historial de la infracción:", error.message);
+        res.status(500).json({ error: "Error interno al obtener el historial." });
     }
 };

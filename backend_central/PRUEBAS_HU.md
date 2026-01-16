@@ -181,3 +181,155 @@ Intentar cambiar a una contraseña débil.
 ```json
 { "error": "Sesión expirada o iniciada en otro dispositivo" }
 ```
+
+---
+
+## Obtención y Uso del Token JWT
+
+Para interactuar con endpoints protegidos por autenticación, primero se debe obtener un JSON Web Token (JWT) a través del endpoint de login. Este token debe ser incluido en la cabecera `Authorization` de las solicitudes subsiguientes.
+
+### Paso 1: Obtener el Token JWT (Login)
+
+*   **Método:** `POST`
+*   **Endpoint:** `/login`
+*   **Body (JSON):**
+    ```json
+    {
+        "username": "un_usuario_existente",
+        "password": "su_password"
+    }
+    ```
+    (Puedes usar "11111" y "securepassword" si usaste los datos de prueba del `bd.sql`)
+
+*   **Respuesta Esperada (200):**
+    ```json
+    {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoxLCJ1c2VybmFtZSI6IjExMTExIiwidG9rZW5fdmVyc2lvbiI6MSwiaWF0IjoxNzA1NzA4ODAwLCJleHAiOjE3MDU3Mzc2MDB9.EXAMPLE_TOKEN_STRING",
+        "primer_ingreso": false,
+        "mensaje": "Login exitoso"
+    }
+    ```
+    Copia el valor del campo `token`.
+
+### Paso 2: Usar el Token en Solicitudes Protegidas
+
+Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el prefijo `Bearer` para acceder a los endpoints protegidos, como `modificar-placa` y `anular`.
+
+*   **Cabecera:**
+    ```
+    Authorization: Bearer <tu_token_jwt_aqui>
+    ```
+
+*   **Ejemplo de Uso (Modificar Placa):**
+    *   **Método:** `PATCH`
+    *   **Endpoint:** `/infracciones/1/modificar-placa`
+    *   **Cabecera:** `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoxLCJ1c2VybmFtZSI6IjExMTExIiwidG9rZW5fdmVyc2lvbiI6MSwiaWF0IjoxNzA1NzA4ODAwLCJleHAiOjE3MDU3Mzc2MDB9.EXAMPLE_TOKEN_STRING`
+    *   **Body (JSON):**
+        ```json
+        {
+            "placa": "ABD-123",
+            "justificacion": "Corrección de un caracter en la placa."
+        }
+        ```
+
+## HU007: Modificación y Anulación de Infracciones
+
+**Objetivo:** Verificar la corrección de datos menores y la anulación de infracciones, asegurando que cada cambio quede registrado en la auditoría.
+
+### Escenario 1: Corrección de Placa
+
+1.  **Obtener una infracción existente.**
+    *   `GET /infracciones/1`
+    *   Verificar la placa actual (ej. `ABC-123`).
+
+2.  **Modificar la placa con una justificación.**
+    *   **Endpoint:** `PATCH /infracciones/1/modificar-placa`
+    *   **Body (JSON):**
+        ```json
+        {
+            "placa": "ABD-123",
+            "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica."
+        }
+        ```
+    *   **Respuesta Esperada (200):**
+        ```json
+        {
+            "mensaje": "Placa de la infracción actualizada y auditada correctamente."
+        }
+        ```
+
+3.  **Verificar que el cambio se aplicó.**
+    *   `GET /infracciones/1`
+    *   Confirmar que la placa ahora es `ABD-123`.
+
+### Escenario 2: Anulación de Infracción
+
+1.  **Seleccionar una infracción activa.**
+    *   `GET /infracciones/2`
+    *   Verificar que el estado no sea `ANULADA`.
+
+2.  **Anular la infracción con una justificación.**
+    *   **Endpoint:** `PATCH /infracciones/2/anular`
+    *   **Body (JSON):**
+        ```json
+        {
+            "justificacion": "La infracción fue levantada por error, el vehículo no correspondía."
+        }
+        ```
+    *   **Respuesta Esperada (200):**
+        ```json
+        {
+            "mensaje": "Infracción anulada y auditada correctamente."
+        }
+        ```
+
+3.  **Verificar que el estado de la infracción cambió.**
+    *   `GET /infracciones/2`
+    *   Aunque la infracción anulada no debería aparecer en la lista general, si se consulta por ID, su estado debería ser `ANULADA`. (Esto depende de la implementación final de `getInfraccionById`).
+
+---
+
+## HU008: Auditoría de Cambios de una Infracción
+
+**Objetivo:** Consultar el historial de modificaciones de una infracción.
+
+### Escenario Único: Consultar Historial
+
+1.  **Utilizar la infracción del Escenario 1 (ID 1), que ya fue modificada.**
+    *   **Endpoint:** `GET /infracciones/1/historial`
+    *   **Respuesta Esperada (200):**
+        Un arreglo con al menos un objeto de auditoría.
+        ```json
+        [
+            {
+                "fecha_modificacion": "2026-01-16T12:00:00.000Z",
+                "campo_modificado": "vehiculo_infraccionado",
+                "valor_anterior": "ABC-123",
+                "valor_nuevo": "ABD-123",
+                "tipo_modificacion": "CORRECCION",
+                "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica.",
+                "modificado_por": "11111", // admin username
+                "autorizado_por": "11111", // admin username
+                "estatus_autorizacion": "APROBADO"
+            }
+        ]
+        ```
+
+2.  **Utilizar la infracción del Escenario 2 (ID 2), que fue anulada.**
+    *   **Endpoint:** `GET /infracciones/2/historial`
+    *   **Respuesta Esperada (200):**
+        ```json
+        [
+            {
+                "fecha_modificacion": "2026-01-16T12:05:00.000Z",
+                "campo_modificado": "estatus",
+                "valor_anterior": "ACTIVA",
+                "valor_nuevo": "ANULADA",
+                "tipo_modificacion": "ANULACION",
+                "justificacion": "La infracción fue levantada por error, el vehículo no correspondía.",
+                "modificado_por": "11111",
+                "autorizado_por": "11111",
+                "estatus_autorizacion": "APROBADO"
+            }
+        ]
+        ```
