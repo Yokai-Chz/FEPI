@@ -107,28 +107,28 @@ Registra una infracción completa. Incluye validación de vehículo, geocodifica
     ```json
     {
         "fecha": "2024-01-15T14:30:00Z",
-        "latitud": 19.432608,
+        "latitud": 19.432608, 
         "longitud": -99.133209,
-        "placa": "ABC-123",
+        "placa": "A01-AAA",
         "niv": "NIV1234567890",
         "id_agente": 1,
-        "id_licencia": "LIC-9999",
-        "notas": "Vehículo estacionado en lugar prohibido y exceso de velocidad.",
-        "infracciones": ["ART-01", "ART-02"],  
+        "notas": "Estacionado en lugar prohibido",
+        "infracciones": ["ART-06"], 
         "ubicacion_infractor": {
-             "municipio": "Cuauhtémoc",
-             "vialidad": "Av. Paseo de la Reforma",
-             "numero_exterior": "S/N",
-             "nombre_asentamiento": "Centro",
-             "codigo_postal": "06000",
-             "nombre_entidad": "Ciudad de México"
+            "municipio": "Cuauhtémoc",
+            "vialidad": "Av. Paseo de la Reforma",
+            "numero_exterior": "S/N",
+            "nombre_asentamiento": "Centro",
+            "codigo_postal": "06000",
+            "nombre_entidad": "Ciudad de México"
         },
         "evidencias": [
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUB...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUC...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUD..."
         ]
-    }
-    ```
+    }    ```
     > **Nota:** El campo `infracciones` recibe un array con los identificadores (artículos) del catálogo. `evidencias` espera cadenas en base64.
 
 ### Listar Infracciones

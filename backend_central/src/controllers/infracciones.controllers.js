@@ -1,5 +1,5 @@
 import { createUbicacion, createUbicacionDirect } from "./ubicacion.controllers.js";
-import { getVehiculo } from "./vehiculos.controllers.js";
+import { getVehiculo, getAdeudosInternal } from "./vehiculos.controllers.js";
 import { getLineaCaptura } from "./lineaCaptura.controllers.js";
 import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
 import { createEvidencias } from "./evidencias.controllers.js";
@@ -51,6 +51,15 @@ export const createInfraccion = async (req, res) => {
         // Necesita: placa o niv
         const reporteVehiculo = await getVehiculo(req, res); 
         if (!reporteVehiculo) return; 
+
+        if (reporteVehiculo.tieneReporteRobo) {
+            return res.status(400).json({ error: "El vehículo tiene reporte de robo. No se puede generar la infracción." });
+        }
+
+        const adeudos = await getAdeudosInternal(reporteVehiculo.placa);
+        if (adeudos.length > 0) {
+            return res.status(400).json({ error: "El vehículo tiene adeudos pendientes. No se puede generar la infracción." });
+        }
 
         const id_vehiculo = reporteVehiculo.placa || reporteVehiculo.niv;
 

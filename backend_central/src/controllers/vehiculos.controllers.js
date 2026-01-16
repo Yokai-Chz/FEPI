@@ -23,7 +23,7 @@ export const getVehiculoInternal = async (placa, niv) => {
 };
 
 // Helper interno para consultar Adeudos en Finanzas
-const getAdeudosInternal = async (placa) => {
+export const getAdeudosInternal = async (placa) => {
     if (!placa) return [];
     const url = `${API_FINANZAS}?placa=${placa}`;
     try {
