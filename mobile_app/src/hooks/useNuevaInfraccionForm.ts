@@ -72,18 +72,23 @@ export const useNuevaInfraccionForm = () => {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
       setCoordenadas({ lat: latitude, lon: longitude });
 
-      let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
-      
-      if (addressResponse.length > 0) {
-        const addr = addressResponse[0];
-        const direccionFormateada = `${addr.street || ''} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.subregion || addr.city || ''}`;
-        setUbicacionHecho(direccionFormateada.trim());
-      } else {
-        setUbicacionHecho(`${latitude}, ${longitude}`);
+      try {
+        let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (addressResponse.length > 0) {
+          const addr = addressResponse[0];
+          // Formato: Calle 123, Colonia, Alcaldía
+          const direccionFormateada = `${addr.street || ''} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.subregion || addr.city || ''}`;
+          setUbicacionHecho(direccionFormateada.replace(/^ , /, '').trim()); // Limpieza básica
+        } else {
+          setUbicacionHecho(`GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        }
+      } catch (geoError) {
+        // Fallback en caso de error de red o timeout
+        setUbicacionHecho(`GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
       }
 
     } catch (error) {
