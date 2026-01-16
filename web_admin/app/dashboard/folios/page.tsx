@@ -3,17 +3,46 @@ import { useEffect, useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import StatCard from '../../components/StatCard';
 import FolioRow from '../../components/FolioRow';
+import FolioDetailModal from '../../components/FolioDetailModal'; // Importar el nuevo modal
 import { DashboardService, Folio, RecaudacionStats } from '../../../src/services/dashboard.service';
 import { DownloadCloud, Search } from 'lucide-react';
 
 export default function FoliosPage() {
   const [folios, setFolios] = useState<Folio[]>([]);
   const [stats, setStats] = useState<RecaudacionStats | null>(null);
+  const [selectedFolio, setSelectedFolio] = useState<Folio | null>(null); // Estado para el folio seleccionado
+  const [filterPlaca, setFilterPlaca] = useState(''); // Estado para filtro de placa
+  const [filterFolio, setFilterFolio] = useState(''); // Estado para filtro de folio
+
+  const fetchFolios = async () => {
+    const fetchedFolios = await DashboardService.getFolios({
+      placa: filterPlaca,
+      folio: filterFolio
+    });
+    setFolios(fetchedFolios);
+  };
 
   useEffect(() => {
-    DashboardService.getFolios().then(setFolios);
+    fetchFolios();
     DashboardService.getRecaudacionStats().then(setStats);
-  }, []);
+  }, [filterPlaca, filterFolio]); // Dependencias para re-ejecutar el filtro
+
+  const handleOpenModal = async (folio: Folio) => {
+    // Para asegurar que tenemos la información más detallada si es necesario,
+    // aunque nuestro fake service ya devuelve todo.
+    const fullFolioDetails = await DashboardService.getFolioById(folio.id);
+    setSelectedFolio(fullFolioDetails || folio);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedFolio(null);
+    fetchFolios(); // Refrescar la lista de folios al cerrar el modal (por si hubo cambios)
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchFolios();
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f4f4f4]">
@@ -34,14 +63,16 @@ export default function FoliosPage() {
         {/* Tabla de Folios */}
         <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-8 border-b border-gray-50 flex justify-between items-center gap-4">
-            <div className="relative flex-1 max-w-md">
+            <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
               <input 
                 type="text" 
                 placeholder="Filtrar por Placa o Folio..." 
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#BC955C] transition-all"
+                value={filterPlaca} // Usamos solo placa por simplicidad de un solo input
+                onChange={(e) => setFilterPlaca(e.target.value)}
               />
-            </div>
+            </form>
             <button className="flex items-center gap-2 border-2 border-[#BC955C] text-[#BC955C] px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#BC955C] hover:text-white transition-all">
               <DownloadCloud size={16} />
               Exportar Reporte
@@ -60,11 +91,15 @@ export default function FoliosPage() {
               </tr>
             </thead>
             <tbody>
-              {folios.map(f => <FolioRow key={f.id} folio={f} />)}
+              {folios.map(f => <FolioRow key={f.id} folio={f} onViewDetails={handleOpenModal} />)}
             </tbody>
           </table>
         </div>
       </main>
+
+      {selectedFolio && (
+        <FolioDetailModal folio={selectedFolio} onClose={handleCloseModal} />
+      )}
     </div>
   );
 }

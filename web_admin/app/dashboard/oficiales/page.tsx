@@ -7,10 +7,24 @@ import { Plus, Search } from 'lucide-react';
 
 export default function OficialesPage() {
   const [oficiales, setOficiales] = useState<Oficial[]>([]);
+  
+  const fetchOficiales = () => {
+    DashboardService.getOficiales().then(setOficiales);
+  };
 
   useEffect(() => {
-    DashboardService.getOficiales().then(setOficiales);
+    fetchOficiales();
   }, []);
+
+  const handleUpdateStatus = async (oficialId: string, newStatus: 'AUTORIZADO' | 'INACTIVO') => {
+    const success = await DashboardService.updateOficialStatus(oficialId, newStatus);
+    if (success) {
+      alert(`Estatus del oficial actualizado a ${newStatus}.`);
+      fetchOficiales(); // Recargar la lista para reflejar el cambio
+    } else {
+      alert('Error al actualizar el estatus del oficial.');
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f4f4f4]">
@@ -56,7 +70,7 @@ export default function OficialesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {oficiales.map(o => <OficialRow key={o.id} oficial={o} />)}
+              {oficiales.map(o => <OficialRow key={o.id} oficial={o} onUpdateStatus={handleUpdateStatus} />)}
             </tbody>
           </table>
           
