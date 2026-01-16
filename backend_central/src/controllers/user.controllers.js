@@ -157,16 +157,32 @@ export const updateLastConnection = async (userId) => {
 
 /*
     Funcion para actualizar la contrasena de un usuario
+    HU002: Incluye validaciones de seguridad
 */
-export const updatePassword = async (userId, newPassword) => {
+export const updatePassword = async (req, res) => {
+    const userId = req.params.id;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
+    }
+
+    // Regex: Al menos una mayúscula y un número
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ error: "La contraseña debe contener al menos una mayúscula y un número" });
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await pool.query(
             `UPDATE usuarios SET password_hash = $1 WHERE id_usuario = $2`,
             [hashedPassword, userId]
         );
+        res.status(200).json({ mensaje: "Contraseña actualizada exitosamente" });
     } catch (err) {
         console.error("Error updating password:", err);
+        res.status(500).json({ error: "Error al actualizar la contraseña" });
     }
 }; 
 

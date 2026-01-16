@@ -33,6 +33,7 @@ CREATE TABLE usuarios (
     password_hash TEXT NOT NULL,
     tipo_usuario VARCHAR(20) CHECK (tipo_usuario IN ('admin', 'oficial', 'consulta')),
     ultima_conexion VARCHAR(30) DEFAULT NULL,
+    token_version INTEGER DEFAULT 1,
     borrado BOOLEAN DEFAULT FALSE
 );
 
