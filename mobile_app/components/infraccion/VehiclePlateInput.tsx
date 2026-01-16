@@ -21,9 +21,8 @@ export default function VehiclePlateInput({ value, onChange, isForeign, onForeig
   const hasProhibitedChars = !isForeign && /[IOQÑ]/i.test(value);
 
   const handleTextChange = (text: string) => {
-    // Si es foráneo, no formateamos (permitimos formato libre)
-    // Si es CDMX, aplicamos formato automático
-    const formatted = isForeign ? text.toUpperCase() : formatPlate(text);
+    // Aplicamos formato automático a CDMX y Foráneos (si coinciden con patrones conocidos)
+    const formatted = formatPlate(text);
     onChange(formatted);
   };
 
