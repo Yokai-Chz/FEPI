@@ -1,109 +1,110 @@
 /**
  * Utilidades para la validación de placas vehiculares de la CDMX
- * Basado en la NOM-001-SCT-2-2016 y reglamentos locales.
+ * Basado en la NOM-001-SCT-2-2016 y el archivo infoPlaca.md
  */
 
-// Letras prohibidas para evitar confusiones (I, O, Q, Ñ)
-// Se usa un regex que solo permita: A-H, J-N, P, R-Z
+// Letras prohibidas para evitar confusiones (I, O, Q, Ñ) en CDMX
 const VALID_CHARS_REGEX = /^[A-HJ-NPR-Z0-9]+$/;
 
 export const isValidCDMXPlate = (plate: string): boolean => {
-  // 1. Limpieza básica: mayúsculas, quitar guiones y espacios
   const cleanPlate = plate.toUpperCase().replace(/[\s-]/g, '');
 
-  // 2. Verificar caracteres prohibidos (I, O, Q, Ñ)
   if (!VALID_CHARS_REGEX.test(cleanPlate)) {
     return false;
   }
 
-  // 3. Validar contra patrones conocidos de CDMX
+  // --- PATRONES SEGÚN INFOPLACA.MD ---
 
-  // --- AUTOMÓVILES PRIVADOS ---
-  
-  // Formato Anterior: 3 Números + 3 Letras (Ej. 123-ABC)
-  const privateOldPattern = /^\d{3}[A-Z]{3}$/;
-  
-  // Formato Nuevo: 1 Letra + 2 Números + 3 Letras (Ej. A01-AAA)
-  const privateNewPattern = /^[A-Z]\d{2}[A-Z]{3}$/;
+  // 1. Transporte Privado
+  const particularAuto = /^[A-Z]\d{2}[A-Z]{3}$/;        // A00-AAA
+  const camionGrua = /^[A-Z]\d{3}[A-Z]{2}$/;            // A-000-AA
+  const moto1 = /^[A-Z]\d{2}[A-Z]{2}$/;                 // A00AA
+  const moto2 = /^\d[A-Z]\d[A-Z]{2}$/;                 // 0A0AA
+  const moto3 = /^[A-Z]\d[A-Z]{2}\d$/;                 // A0AA0
+  const remolquePrivado = /^[A-Z]\d[A-Z]\d{2}$/;        // A-0A-00
 
+  // 2. Servicio Público Local
+  const taxiLS = /^[LS]\d{4}[A-Z]$/;                    // L-0000-A o S-0000-A
+  const ruta = /^\d{3}[A-Z]\d{3}$/;                     // 000-A-000
+  const autobusPublico = /^\d{6}$/;                     // 000-000
 
-  // --- MOTOCICLETAS ---
-  
-  // Formato estándar (Ej. G01AA, 1A1AA) - 5 Caracteres
-  // Letra-Num-Num-Letra-Letra OR Num-Letra-Num-Letra-Letra
-  const motoPattern1 = /^[A-Z]\d{2}[A-Z]{2}$/; // G01AA
-  const motoPattern2 = /^[0-9][A-Z][0-9][A-Z]{2}$/; // 1A1AA (También visto en asignaciones)
+  // 3. Autotransporte Federal
+  const federalCarga = /^\d{2}[A-Z]{2}\d[A-Z]$/;        // 00-AA-0A
+  const federalDolly = /^[D]\d{2}\d{3}$/;               // D-00-000 (Inicia con D)
 
-
-  // --- TRANSPORTE PÚBLICO (TAXIS) ---
-  
-  // Taxi Libre/Sitio (Ej. A-12345, B-12345)
-  const taxiPatternAB = /^[AB]\d{5}$/;
-  
-  // Taxi Libre/Sitio Series L y S (Ej. L-0001-A)
-  const taxiPatternLS = /^[LS]\d{4}[A-Z]$/;
-
-
-  // --- AUTO ANTIGUO ---
-  // Formato: AAA-00 (Según infoPlaca.md) o Digito-Letra-Letra-Digito-Digito (Según DOF Series)
-  // Adoptamos el de infoPlaca.md como referencia primaria solicitada, pero agregamos el del DOF por robustez.
-  const ancientPattern1 = /^[A-Z]{3}\d{2}$/; 
-  const ancientPattern2 = /^\d[A-Z]{2}\d{2}$/;
+  // 4. Servicios Especiales
+  const ecologico = /^\d{2}[A-Z]\d{3}$/;                // 00A-000
+  const discapacidad = /^\d{2}[A-Z]\d{2}$/;             // 00-A-00
+  const antiguo = /^\d[A-Z]{2}\d{2}$/;                  // 0AA-00
+  const patrulla = /^[A-Z]{2}\d{4}[A-Z]\d$/;            // AA-000A-0
+  const emergencia = /^[A-Z]{2}\d{3}[A-Z]{2}$/;         // AA-000-AA
 
   return (
-    privateOldPattern.test(cleanPlate) ||
-    privateNewPattern.test(cleanPlate) ||
-    motoPattern1.test(cleanPlate) ||
-    motoPattern2.test(cleanPlate) ||
-    taxiPatternAB.test(cleanPlate) ||
-    taxiPatternLS.test(cleanPlate) ||
-    ancientPattern1.test(cleanPlate) ||
-    ancientPattern2.test(cleanPlate)
+    particularAuto.test(cleanPlate) ||
+    camionGrua.test(cleanPlate) ||
+    moto1.test(cleanPlate) ||
+    moto2.test(cleanPlate) ||
+    moto3.test(cleanPlate) ||
+    remolquePrivado.test(cleanPlate) ||
+    taxiLS.test(cleanPlate) ||
+    ruta.test(cleanPlate) ||
+    autobusPublico.test(cleanPlate) ||
+    federalCarga.test(cleanPlate) ||
+    federalDolly.test(cleanPlate) ||
+    ecologico.test(cleanPlate) ||
+    discapacidad.test(cleanPlate) ||
+    antiguo.test(cleanPlate) ||
+    patrulla.test(cleanPlate) ||
+    emergencia.test(cleanPlate)
   );
 };
 
 export const formatPlate = (plate: string): string => {
   const clean = plate.toUpperCase().replace(/[\s-]/g, '');
   
-  // --- AUTOMÓVILES PRIVADOS CDMX ---
-  // Nuevo: A01-AAA
+  // --- FORMATOS FORÁNEOS (NOM-001-SCT-2-2016) ---
+  
+  // AAA-000-A (Foráneo Particular - 7 caracteres)
+  if (/^[A-Z]{3}\d{3}[A-Z]$/.test(clean)) {
+    return `${clean.substring(0, 3)}-${clean.substring(3, 6)}-${clean.substring(6)}`;
+  }
+
+  // AA-0000-A (Foráneo Camión - 7 caracteres)
+  if (/^[A-Z]{2}\d{4}[A-Z]$/.test(clean)) {
+    return `${clean.substring(0, 2)}-${clean.substring(2, 6)}-${clean.substring(6)}`;
+  }
+
+  // --- FORMATOS CDMX ---
+  
+  // A00-AAA (Particular CDMX)
   if (/^[A-Z]\d{2}[A-Z]{3}$/.test(clean)) {
     return `${clean.substring(0, 3)}-${clean.substring(3)}`;
   }
-  // Anterior: 123-ABC
-  if (/^\d{3}[A-Z]{3}$/.test(clean)) {
-    return `${clean.substring(0, 3)}-${clean.substring(3)}`;
+  
+  // A-000-AA (Camión/Grúa CDMX)
+  if (/^[A-Z]\d{3}[A-Z]{2}$/.test(clean)) {
+    return `${clean.substring(0, 1)}-${clean.substring(1, 4)}-${clean.substring(4)}`;
   }
 
-  // --- FEDERAL / CARGA / CAMIONES ---
-  // Formato: 12-AB-34 (2 Num - 2 Letras - 2 Num)
-  if (/^\d{2}[A-Z]{2}\d{2}$/.test(clean)) {
-    return `${clean.substring(0, 2)}-${clean.substring(2, 4)}-${clean.substring(4)}`;
-  }
-  // Formato: 12-AB-3C (2 Num - 2 Letras - 1 Num 1 Letra)
-  if (/^\d{2}[A-Z]{2}\d[A-Z]$/.test(clean)) {
-    return `${clean.substring(0, 2)}-${clean.substring(2, 4)}-${clean.substring(4)}`;
-  }
-  // Formato: 12-AB-C3 (2 Num - 2 Letras - 1 Letra 1 Num)
-  if (/^\d{2}[A-Z]{2}[A-Z]\d$/.test(clean)) {
-    return `${clean.substring(0, 2)}-${clean.substring(2, 4)}-${clean.substring(4)}`;
-  }
-
-  // --- AUTO ANTIGUO ---
-  // Formato: AAA-00 (3 Letras - 2 Números)
-  if (/^[A-Z]{3}\d{2}$/.test(clean)) {
-    return `${clean.substring(0, 3)}-${clean.substring(3)}`;
-  }
-
-  // --- TAXIS (L/S Series) ---
-  // Formato: L-1234-A
+  // L-0000-A (Taxi)
   if (/^[LS]\d{4}[A-Z]$/.test(clean)) {
     return `${clean.substring(0, 1)}-${clean.substring(1, 5)}-${clean.substring(5)}`;
   }
-  
-  // --- MOTOCICLETAS (Opcional, usualmente sin guión o 5 corridos, pero si se requiere separación) ---
-  // Si se detecta el patrón 1 Letra 2 Num 2 Letras (G01AA) -> G01-AA (ejemplo)
-  // Dejaremos Motos sin guión por ahora salvo que sea muy largo, ya que 5 chars es corto.
+
+  // 000-A-000 (Ruta)
+  if (/^\d{3}[A-Z]\d{3}$/.test(clean)) {
+    return `${clean.substring(0, 3)}-${clean.substring(3, 4)}-${clean.substring(4)}`;
+  }
+
+  // 00-AA-0A (Federal)
+  if (/^\d{2}[A-Z]{2}\d[A-Z]$/.test(clean)) {
+    return `${clean.substring(0, 2)}-${clean.substring(2, 4)}-${clean.substring(4)}`;
+  }
+
+  // 00-A-00 (Discapacidad)
+  if (/^\d{2}[A-Z]\d{2}$/.test(clean)) {
+    return `${clean.substring(0, 2)}-${clean.substring(2, 3)}-${clean.substring(3)}`;
+  }
 
   return clean;
 };
