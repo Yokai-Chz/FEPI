@@ -113,8 +113,8 @@ Registra una infracción completa. Incluye validación de vehículo, geocodifica
         "niv": "NIV1234567890",
         "id_agente": 1,
         "id_licencia": "LIC-9999",
-        "descripcion": "Vehículo estacionado en lugar prohibido y exceso de velocidad.",
-        "infracciones": ["ART-01", "ART-02"], 
+        "notas": "Vehículo estacionado en lugar prohibido y exceso de velocidad.",
+        "infracciones": ["ART-01", "ART-02"],  
         "ubicacion_infractor": {
              "municipio": "Cuauhtémoc",
              "vialidad": "Av. Paseo de la Reforma",

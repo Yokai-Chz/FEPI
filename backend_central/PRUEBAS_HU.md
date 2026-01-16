@@ -49,6 +49,14 @@ El oficial llena los datos y envía la multa.
     "id_agente": 1,
     "descripcion": "Estacionado en lugar prohibido",
     "infracciones": ["ART-01"], 
+    "ubicacion_infractor": {
+        "municipio": "Cuauhtémoc",
+        "vialidad": "Av. Paseo de la Reforma",
+        "numero_exterior": "S/N",
+        "nombre_asentamiento": "Centro",
+        "codigo_postal": "06000",
+        "nombre_entidad": "Ciudad de México"
+    },
     "evidencias": [
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..." 
     ]

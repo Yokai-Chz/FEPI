@@ -2,6 +2,7 @@ import { createUbicacion, createUbicacionDirect } from "./ubicacion.controllers.
 import { getVehiculo } from "./vehiculos.controllers.js";
 import { getLineaCaptura } from "./lineaCaptura.controllers.js";
 import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
+import { createEvidencias } from "./evidencias.controllers.js";
 import { pool } from "../db.js";
 
 
@@ -66,7 +67,7 @@ export const createInfraccion = async (req, res) => {
         const query = `
             INSERT INTO "infracciones" (
                 "fecha", 
-                "ubicacion", 
+                "ubicacion_infraccion", 
                 "vehiculo_infraccionado", 
                 "id_usuario", 
                 "licencia_infractor",
@@ -84,54 +85,30 @@ export const createInfraccion = async (req, res) => {
             nuevaInfraccion.notas
         ];
 
-        let errorHappened = false;
-        let client;
-        try {
-            // Iniciamos un rollback por si sucede un error dentro de los siguientes funciones
-            // ocupamos un solo cliente para poder ligar todos los queries
-            client = await pool.connect();
-            client.query('BEGIN');
+        const response = await pool.query(query, values);
+        const infraccion_id = response.rows[0].id_infraccion;
 
-            const response = await client.query(query, values);
-            const infraccion_id = response.rows[0].id_infraccion;
+        await createAsociacionInfraccion(req, res, pool, infraccion_id, infracciones);
 
+        await createEvidencias(infraccion_id, evidencias);
 
-            await createAsociacionInfraccion(req, res, client, infraccion_id, infracciones);
+        const lineaCaptura = await getLineaCaptura(req, res, infraccion_id);
 
-            await createEvidencias(infraccion_id, evidencias);
+        const queryLineaCaptura = `
+        UPDATE "infracciones" 
+        SET "linea_captura" = $1 
+        WHERE "id_infraccion" = $2
+        `;
+        const valuesLineaCaptura = [lineaCaptura, infraccion_id];
 
-            const lineaCaptura = await getLineaCaptura(req, res, infraccion_id);
+        await pool.query(queryLineaCaptura, valuesLineaCaptura);
 
-            const queryLineaCaptura = `
-            UPDATE "infracciones" 
-            SET "linea_captura" = $1 
-            WHERE "id_infraccion" = $2
-            `;
-            const valuesLineaCaptura = [lineaCaptura, infraccion_id];
+        res.status(201).json({
+            mensaje: "Infracción creada exitosamente",
+            id_infraccion: infraccion_id,
+            linea_captura: lineaCaptura
+        });
 
-            await pool.query(queryLineaCaptura, valuesLineaCaptura);
-
-            res.status(201).json({
-                mensaje: "Infracción creada exitosamente",
-                id_infraccion: infraccion_id,
-                linea_captura: lineaCaptura
-            });
-        } catch (error) {
-            errorHappened = true;
-            res.status(500).json({ error: "Sucedio un error al insertar la infraccion" });
-        } finally {
-            if(client) {
-                if(errorHappened) {
-                    client.query('ROLLBACK');
-                } else {
-                    client.query('COMMIT');
-                }
-                client.release();
-            }
-            if(errorHappened) {
-                throw new Error("Sucedio un error al insertar la infraccion a la base de datos");
-            }
-        }
     } catch (error) {
         console.error(error);
         if (!res.headersSent) {
