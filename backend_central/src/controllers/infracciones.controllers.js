@@ -3,6 +3,7 @@ import { getVehiculo, getAdeudosInternal } from "./vehiculos.controllers.js";
 import { getLineaCaptura } from "./lineaCaptura.controllers.js";
 import { createAsociacionInfraccion } from "./asociacion_infracciones.controllers.js";
 import { createEvidencias } from "./evidencias.controllers.js";
+import { getLicenciaInternal } from "./condutctor.controllers.js";
 import { pool } from "../db.js";
 
 
@@ -38,6 +39,13 @@ export const createInfraccion = async (req, res) => {
 
         if(!id_agente) {
             return res.status(400).json({ error: "Falta id_agente en el JSON" });
+        }
+
+        if (id_licencia) {
+            const licenciaData = await getLicenciaInternal(id_licencia);
+            if (!licenciaData) {
+                return res.status(400).json({ error: "Licencia no válida o no encontrada" });
+            }
         }
 
         if (!infracciones || !Array.isArray(infracciones) || infracciones.length === 0) {

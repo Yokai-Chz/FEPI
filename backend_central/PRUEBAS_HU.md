@@ -76,6 +76,55 @@ El oficial llena los datos y envía la multa.
 }
 ```
 
+### Casos Particulares (Validaciones)
+
+**Caso A: Vehículo con Reporte de Robo**
+Si el vehículo detectado (por placa o NIV) tiene reporte de robo activo en REPUVE:
+
+*   **Respuesta Esperada (Código 400):**
+```json
+{
+    "error": "El vehículo tiene reporte de robo. No se puede generar la infracción."
+}
+```
+
+**Caso B: Vehículo con Adeudos Pendientes**
+Si el vehículo tiene multas o tenencias vencidas/pendientes en Finanzas:
+
+*   **Respuesta Esperada (Código 201):**
+    La infracción **SÍ** se crea, pero se incluye una advertencia.
+```json
+{
+    "mensaje": "Infracción creada exitosamente",
+    "id_infraccion": 124,
+    "linea_captura": "...",
+    "advertencia": "El vehículo tiene adeudos pendientes."
+}
+```
+
+**Caso C: Licencia no válida o no encontrada**
+Si se proporciona un `id_licencia` que no existe en el sistema de SEMOVI:
+
+*   **Respuesta Esperada (Código 400):**
+```json
+{
+    "error": "Licencia no válida o no encontrada"
+}
+```
+
+**Caso D: Infracción sin datos del conductor (Vehículo abandonado/estacionado)**
+Si no se proporciona `id_licencia` ni `ubicacion_infractor`:
+
+*   **Respuesta Esperada (Código 201):**
+    La infracción se crea normalmente vinculada únicamente al vehículo.
+```json
+{
+    "mensaje": "Infracción creada exitosamente",
+    "id_infraccion": 125,
+    "linea_captura": "..."
+}
+```
+
 ---
 
 ## HU002: Autenticación y Control de Sesión
