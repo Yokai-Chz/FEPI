@@ -17,7 +17,7 @@ export default function AdditionalIdInput({ niv, onChangeNiv, licencia, onChange
       <TextInput
         style={[styles.ubiInput, { marginBottom: 16 }]}
         value={niv}
-        onChangeText={text => onChangeNiv(text.toUpperCase())}
+        onChangeText={onChangeNiv}
         placeholder="17 Caracteres"
         maxLength={17}
         autoCapitalize="characters"
@@ -27,7 +27,7 @@ export default function AdditionalIdInput({ niv, onChangeNiv, licencia, onChange
       <TextInput
         style={styles.ubiInput}
         value={licencia}
-        onChangeText={text => onChangeLicencia(text.toUpperCase())}
+        onChangeText={onChangeLicencia}
         placeholder="Número de Licencia"
         autoCapitalize="characters"
       />
