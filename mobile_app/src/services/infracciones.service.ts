@@ -1,6 +1,5 @@
 import * as Network from 'expo-network';
-import * as FileSystem from 'expo-file-system';
-import axios from 'axios';
+import * as FileSystem from 'expo-file-system/legacy';
 import { API_CONFIG, getAuthHeader } from './api.config';
 import { storageService } from './storage.service';
 
@@ -25,25 +24,37 @@ export const infraccionesService = {
 
   // Envío real al servidor
   async sendToServer(data: any, token: string) {
-    // Convertir URIs de fotos a Base64 para cumplir con el JSON solicitado
-    const evidenciasBase64 = await Promise.all(
-      data.evidencias.map(async (uri: string) => {
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-        return `data:image/jpeg;base64,${base64}`;
-      })
-    );
+    // SIMULACIÓN: En lugar de Base64, enviamos URLs simuladas
+    // En producción, aquí se subirían las imágenes a un Storage (S3, Cloudinary)
+    // y se obtendrían sus URLs públicas.
+    const evidenciasSimuladas = data.evidencias.map((uri: string, index: number) => {
+        const nombreArchivo = uri.split('/').pop() || `evidencia_${index}.jpg`;
+        return `https://storage.cdmx.gob.mx/multas/${data.placa}/${new Date().getTime()}_${nombreArchivo}`;
+    });
 
     const payload = {
       ...data,
-      evidencias: evidenciasBase64
+      evidencias: evidenciasSimuladas
     };
 
-    const response = await axios.post(`${API_CONFIG.BASE_URL}/infracciones`, payload, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/infracciones`, {
+      method: 'POST',
       headers: getAuthHeader(token),
-      timeout: API_CONFIG.TIMEOUT
+      body: JSON.stringify(payload),
     });
 
-    return response.data;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error enviando infracción:', response.status, errorText);
+      try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || `Error del servidor: ${response.status}`);
+      } catch (e) {
+          throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+      }
+    }
+
+    return await response.json();
   },
 
   // Proceso de sincronización de pendientes

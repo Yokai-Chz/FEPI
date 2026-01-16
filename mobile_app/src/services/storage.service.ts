@@ -1,4 +1,5 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as SecureStore from 'expo-secure-store';
 
 const QUEUE_FILE = FileSystem.documentDirectory + 'offline_infracciones.json';
 const PHOTOS_DIR = FileSystem.documentDirectory + 'permanente_evidencias/';

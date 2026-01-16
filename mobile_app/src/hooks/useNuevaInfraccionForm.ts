@@ -146,6 +146,7 @@ export const useNuevaInfraccionForm = () => {
         }]
       );
     } catch (error) {
+      console.error("Error en finalizarBoleta:", error);
       Alert.alert("Error", "No se pudo procesar la infracción");
     } finally {
       setEnviando(false);
