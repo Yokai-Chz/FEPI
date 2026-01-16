@@ -213,37 +213,34 @@ Para interactuar con endpoints protegidos por autenticación, primero se debe ob
 
 ### Paso 2: Usar el Token en Solicitudes Protegidas
 
-Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el prefijo `Bearer` para acceder a los endpoints protegidos, como `modificar-placa` y `anular`.
+Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el prefijo `Bearer` para acceder a los endpoints protegidos, como `solicitar-modificacion-placa` y `solicitar-anulacion`.
 
 *   **Cabecera:**
     ```
     Authorization: Bearer <tu_token_jwt_aqui>
     ```
 
-*   **Ejemplo de Uso (Modificar Placa):**
-    *   **Método:** `PATCH`
-    *   **Endpoint:** `/infracciones/1/modificar-placa`
-    *   **Cabecera:** `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoxLCJ1c2VybmFtZSI6IjExMTExIiwidG9rZW5fdmVyc2lvbiI6MSwiaWF0IjoxNzA1NzA4ODAwLCJleHAiOjE3MDU3Mzc2MDB9.EXAMPLE_TOKEN_STRING`
-    *   **Body (JSON):**
-        ```json
-        {
-            "placa": "ABD-123",
-            "justificacion": "Corrección de un caracter en la placa."
-        }
-        ```
+---
 
-## HU007: Modificación y Anulación de Infracciones
+## HU007: Modificación y Anulación de Infracciones (Proceso de Doble Autorización)
 
-**Objetivo:** Verificar la corrección de datos menores y la anulación de infracciones, asegurando que cada cambio quede registrado en la auditoría.
+**Objetivo:** Verificar la corrección de datos menores y la anulación de infracciones a través de un proceso de dos pasos con autorización de un tercero, asegurando el registro de auditoría.
 
-### Escenario 1: Corrección de Placa
+### Flujo General
+
+1.  **Solicitud de Cambio:** Un usuario (ej. oficial) solicita una modificación o anulación. Esta solicitud se registra en auditoría con estado `PENDIENTE`.
+2.  **Consulta de Solicitudes:** Un administrador consulta las solicitudes pendientes.
+3.  **Autorización/Rechazo:** Un administrador diferente al que hizo la solicitud aprueba o rechaza el cambio. Si se aprueba, el cambio se aplica a la infracción; de lo contrario, no.
+
+### Escenario 1: Solicitar Corrección de Placa
 
 1.  **Obtener una infracción existente.**
     *   `GET /infracciones/1`
     *   Verificar la placa actual (ej. `ABC-123`).
 
-2.  **Modificar la placa con una justificación.**
-    *   **Endpoint:** `PATCH /infracciones/1/modificar-placa`
+2.  **Solicitar Modificación de la Placa con Justificación.**
+    *   **Endpoint:** `PATCH /infracciones/1/solicitar-modificacion-placa`
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_solicitante>`
     *   **Body (JSON):**
         ```json
         {
@@ -251,41 +248,120 @@ Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el pref
             "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica."
         }
         ```
-    *   **Respuesta Esperada (200):**
+    *   **Respuesta Esperada (202 Accepted):**
         ```json
         {
-            "mensaje": "Placa de la infracción actualizada y auditada correctamente."
+            "mensaje": "Solicitud de modificación de placa enviada para autorización.",
+            "id_auditoria": 1 // ID del registro de auditoría generado
         }
         ```
 
-3.  **Verificar que el cambio se aplicó.**
-    *   `GET /infracciones/1`
-    *   Confirmar que la placa ahora es `ABD-123`.
-
-### Escenario 2: Anulación de Infracción
+### Escenario 2: Solicitar Anulación de Infracción
 
 1.  **Seleccionar una infracción activa.**
     *   `GET /infracciones/2`
     *   Verificar que el estado no sea `ANULADA`.
 
-2.  **Anular la infracción con una justificación.**
-    *   **Endpoint:** `PATCH /infracciones/2/anular`
+2.  **Solicitar Anulación de la Infracción con Justificación.**
+    *   **Endpoint:** `PATCH /infracciones/2/solicitar-anulacion`
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_solicitante>`
     *   **Body (JSON):**
         ```json
         {
             "justificacion": "La infracción fue levantada por error, el vehículo no correspondía."
         }
         ```
-    *   **Respuesta Esperada (200):**
+    *   **Respuesta Esperada (202 Accepted):**
         ```json
         {
-            "mensaje": "Infracción anulada y auditada correctamente."
+            "mensaje": "Solicitud de anulación de infracción enviada para autorización.",
+            "id_auditoria": 2 // ID del registro de auditoría generado
         }
         ```
 
-3.  **Verificar que el estado de la infracción cambió.**
+### Escenario 3: Consultar Solicitudes Pendientes
+
+1.  **Obtener un token de un usuario AUTORIZADOR** (diferente al solicitante).
+    *   `POST /login` (ej. con otro usuario administrador)
+
+2.  **Consultar todas las solicitudes de cambio pendientes.**
+    *   **Endpoint:** `GET /infracciones/solicitudes-pendientes`
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_autorizador>`
+    *   **Respuesta Esperada (200 OK):**
+        ```json
+        [
+            {
+                "id_auditoria": 1,
+                "id_infraccion": 1,
+                "folio": "INF-0000001",
+                "fecha_modificacion": "2026-01-16T12:00:00.000Z",
+                "campo_modificado": "vehiculo_infraccionado",
+                "valor_anterior": "ABC-123",
+                "valor_nuevo": "ABD-123",
+                "tipo_modificacion": "CORRECCION",
+                "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica.",
+                "solicitado_por": "usuario_solicitante_1"
+            },
+            {
+                "id_auditoria": 2,
+                "id_infraccion": 2,
+                "folio": "INF-0000002",
+                "fecha_modificacion": "2026-01-16T12:05:00.000Z",
+                "campo_modificado": "estatus",
+                "valor_anterior": "ACTIVA",
+                "valor_nuevo": "ANULADA",
+                "tipo_modificacion": "ANULACION",
+                "justificacion": "La infracción fue levantada por error, el vehículo no correspondía.",
+                "solicitado_por": "usuario_solicitante_2"
+            }
+        ]
+        ```
+
+### Escenario 4: Autorizar/Rechazar una Solicitud
+
+1.  **Seleccionar una `id_auditoria` de las solicitudes pendientes.** (ej. `1` del Escenario 3).
+
+2.  **Autorizar la solicitud.**
+    *   **Endpoint:** `PATCH /infracciones/auditoria/1/autorizar`
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_autorizador>`
+    *   **Body (JSON - Aprobación):**
+        ```json
+        {
+            "estatus_autorizacion": "APROBADO",
+            "justificacion_autorizador": "Solicitud revisada y aprobada."
+        }
+        ```
+    *   **Respuesta Esperada (200 OK):**
+        ```json
+        {
+            "mensaje": "La solicitud de cambio ha sido aprobada."
+        }
+        ```
+
+3.  **Verificar que el cambio se aplicó a la infracción.**
+    *   `GET /infracciones/1`
+    *   Confirmar que la placa ahora es `ABD-123`.
+
+4.  **Rechazar otra solicitud.** (ej. `2` del Escenario 3).
+    *   **Endpoint:** `PATCH /infracciones/auditoria/2/autorizar`
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_autorizador>`
+    *   **Body (JSON - Rechazo):**
+        ```json
+        {
+            "estatus_autorizacion": "RECHAZADO",
+            "justificacion_autorizador": "No hay evidencia suficiente para la anulación."
+        }
+        ```
+    *   **Respuesta Esperada (200 OK):**
+        ```json
+        {
+            "mensaje": "La solicitud de cambio ha sido rechazada."
+        }
+        ```
+
+5.  **Verificar que el cambio NO se aplicó a la infracción.**
     *   `GET /infracciones/2`
-    *   Aunque la infracción anulada no debería aparecer en la lista general, si se consulta por ID, su estado debería ser `ANULADA`. (Esto depende de la implementación final de `getInfraccionById`).
+    *   Confirmar que el estado sigue siendo `ACTIVA` (o el que tuviera antes de la solicitud).
 
 ---
 
@@ -293,12 +369,12 @@ Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el pref
 
 **Objetivo:** Consultar el historial de modificaciones de una infracción.
 
-### Escenario Único: Consultar Historial
+### Escenario Único: Consultar Historial Detallado
 
-1.  **Utilizar la infracción del Escenario 1 (ID 1), que ya fue modificada.**
+1.  **Consultar el historial de la infracción `1` (placa modificada).**
     *   **Endpoint:** `GET /infracciones/1/historial`
-    *   **Respuesta Esperada (200):**
-        Un arreglo con al menos un objeto de auditoría.
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_con_permisos_de_consulta>`
+    *   **Respuesta Esperada (200 OK):**
         ```json
         [
             {
@@ -307,17 +383,18 @@ Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el pref
                 "valor_anterior": "ABC-123",
                 "valor_nuevo": "ABD-123",
                 "tipo_modificacion": "CORRECCION",
-                "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica.",
-                "modificado_por": "11111", // admin username
-                "autorizado_por": "11111", // admin username
+                "justificacion": "Corrección de un caracter en la placa según la evidencia fotográfica. | Justificación Autorizador: Solicitud revisada y aprobada.",
+                "modificado_por": "usuario_solicitante_1",
+                "autorizado_por": "usuario_autorizador_1",
                 "estatus_autorizacion": "APROBADO"
             }
         ]
         ```
 
-2.  **Utilizar la infracción del Escenario 2 (ID 2), que fue anulada.**
+2.  **Consultar el historial de la infracción `2` (anulación rechazada).**
     *   **Endpoint:** `GET /infracciones/2/historial`
-    *   **Respuesta Esperada (200):**
+    *   **Cabecera:** `Authorization: Bearer <token_de_usuario_con_permisos_de_consulta>`
+    *   **Respuesta Esperada (200 OK):**
         ```json
         [
             {
@@ -326,10 +403,10 @@ Una vez obtenido el token, inclúyelo en la cabecera `Authorization` con el pref
                 "valor_anterior": "ACTIVA",
                 "valor_nuevo": "ANULADA",
                 "tipo_modificacion": "ANULACION",
-                "justificacion": "La infracción fue levantada por error, el vehículo no correspondía.",
-                "modificado_por": "11111",
-                "autorizado_por": "11111",
-                "estatus_autorizacion": "APROBADO"
+                "justificacion": "La infracción fue levantada por error, el vehículo no correspondía. | Justificación Autorizador: No hay evidencia suficiente para la anulación.",
+                "modificado_por": "usuario_solicitante_2",
+                "autorizado_por": "usuario_autorizador_1",
+                "estatus_autorizacion": "RECHAZADO"
             }
         ]
         ```
