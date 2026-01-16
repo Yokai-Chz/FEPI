@@ -13,4 +13,6 @@ router.delete("/users/:id", deleteUser);
 
 router.put("/users/:id", updateUser);
 
+router.patch("/users/:id/password", updatePassword);
+
 export default router;
