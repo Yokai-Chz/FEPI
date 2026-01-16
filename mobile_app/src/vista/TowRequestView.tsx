@@ -15,11 +15,14 @@ export default function TowRequestView() {
   const params = useLocalSearchParams();
   const { user } = useAuth();
   
-  // Datos del inventario recibidos
-  const vehiculoData = params.vehiculo ? JSON.parse(params.vehiculo as string) : null;
+  // Datos recibidos desde la redirección
+  const placaInicial = params.placa as string || "";
+  const latInicial = params.lat ? parseFloat(params.lat as string) : null;
+  const lonInicial = params.lon ? parseFloat(params.lon as string) : null;
+  const direccionInicial = params.direccion as string || "Obteniendo ubicación...";
 
   // Folio de la infracción previamente creada (Ligado)
-  const FOLIO_INFRACCION = "INF-2026-8821"; 
+  const FOLIO_INFRACCION = "INF-RECIENTE"; 
 
   // --- ESTADOS ---
   const [ubicacion, setUbicacion] = useState<{
@@ -27,15 +30,21 @@ export default function TowRequestView() {
     lng: number | null,
     direccion: string
   }>({ 
-    lat: null, lng: null, direccion: "Obteniendo ubicación..." 
+    lat: latInicial, 
+    lng: lonInicial, 
+    direccion: direccionInicial 
   });
-  const [cargandoGPS, setCargandoGPS] = useState(true);
+  
+  // Si ya tenemos datos, no cargamos GPS de nuevo al inicio
+  const [cargandoGPS, setCargandoGPS] = useState(!latInicial);
   const [referencia, setReferencia] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [servicioConfirmado, setServicioConfirmado] = useState<any>(null);
 
   useEffect(() => {
-    obtenerGPS();
+    if (!latInicial) {
+        obtenerGPS();
+    }
   }, []);
 
   const obtenerGPS = async () => {
@@ -175,8 +184,8 @@ export default function TowRequestView() {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>VINCULADO A:</Text>
           <Text style={styles.summaryText}>• Multa: {FOLIO_INFRACCION}</Text>
-          <Text style={styles.summaryText}>• Vehículo: {vehiculoData?.placa}</Text>
-          <Text style={styles.summaryText}>• Oficial: {user?.id} ({user?.sector})</Text>
+          <Text style={styles.summaryText}>• Vehículo: {placaInicial}</Text>
+          <Text style={styles.summaryText}>• Oficial: {user?.name} ({user?.sector})</Text>
         </View>
 
       </ScrollView>
