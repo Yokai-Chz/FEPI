@@ -39,6 +39,7 @@ CREATE TABLE usuarios (
 
 CREATE TABLE infracciones (
     id_infraccion SERIAL PRIMARY KEY,
+    folio VARCHAR(25) UNIQUE,
     linea_captura VARCHAR(40),
     fecha VARCHAR(30),
     ubicacion_infraccion INTEGER REFERENCES ubicacion(id_ubicacion), 
@@ -47,7 +48,8 @@ CREATE TABLE infracciones (
     ubicacion_infractor INTEGER REFERENCES ubicacion(id_ubicacion),
     licencia_infractor VARCHAR(25),
     notas TEXT,
-    estatus_pago BOOLEAN DEFAULT FALSE
+    estatus_pago BOOLEAN DEFAULT FALSE, 
+    borrado BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE evidencias (
@@ -126,32 +128,35 @@ VALUES
 (10, '00000', '$2b$10$ITvnlr2gfsBFeaXvUPKud./LEgZuutG.ECos5TGEISdcy.KD8p7Xu', 'admin');
 
 -- Inserciones para la tabla infracciones
-INSERT INTO infracciones (linea_captura, fecha, ubicacion_infraccion, ubicacion_infractor, vehiculo_infraccionado, id_usuario, licencia_infractor, notas, estatus_pago)
+INSERT INTO infracciones (folio, linea_captura, fecha, ubicacion_infraccion, ubicacion_infractor, vehiculo_infraccionado, id_usuario, licencia_infractor, notas, estatus_pago)
 VALUES
-('LC1', '2024-01-01', 1, 1, 'ABC-123', 2, 'LIC001', 'Sin notas', FALSE),
-('LC2', '2024-01-02', 2, 2, 'DEF-456', 5, 'LIC002', 'Sin notas', FALSE),
-('LC3', '2024-01-03', 3, 3, 'GHI-789', 8, 'LIC003', 'Sin notas', FALSE),
-('LC4', '2024-01-04', 4, 4, 'JKL-101', 2, 'LIC004', 'Sin notas', FALSE),
-('LC5', '2024-01-05', 5, 5, 'MNO-112', 5, 'LIC005', 'Sin notas', FALSE),
-('LC6', '2024-01-06', 6, 6, 'PQR-131', 8, 'LIC006', 'Sin notas', FALSE),
-('LC7', '2024-01-07', 7, 7, 'STU-415', 2, 'LIC007', 'Sin notas', FALSE),
-('LC8', '2024-01-08', 8, 8, 'VWX-161', 5, 'LIC008', 'Sin notas', FALSE),
-('LC9', '2024-01-09', 9, 9, 'YZA-718', 8, 'LIC009', 'Sin notas', FALSE),
-('LC10', '2024-01-10', 10, 10, 'BCD-192', 2, 'LIC010', 'Sin notas', FALSE);
+('INF-0000001', 'LC1', '2024-01-01', 1, 1, 'ABC-123', 2, 'LIC001', 'Sin notas', FALSE),
+('INF-0000002', 'LC2', '2024-01-02', 2, 2, 'DEF-456', 5, 'LIC002', 'Sin notas', FALSE),
+('INF-0000003', 'LC3', '2024-01-03', 3, 3, 'GHI-789', 8, 'LIC003', 'Sin notas', FALSE),
+('INF-0000004', 'LC4', '2024-01-04', 4, 4, 'JKL-101', 2, 'LIC004', 'Sin notas', FALSE),
+('INF-0000005', 'LC5', '2024-01-05', 5, 5, 'MNO-112', 5, 'LIC005', 'Sin notas', FALSE),
+('INF-0000006', 'LC6', '2024-01-06', 6, 6, 'PQR-131', 8, 'LIC006', 'Sin notas', FALSE),
+('INF-0000007', 'LC7', '2024-01-07', 7, 7, 'STU-415', 2, 'LIC007', 'Sin notas', FALSE),
+('INF-0000008', 'LC8', '2024-01-08', 8, 8, 'VWX-161', 5, 'LIC008', 'Sin notas', FALSE),
+('INF-0000009', 'LC9', '2024-01-09', 9, 9, 'YZA-718', 8, 'LIC009', 'Sin notas', FALSE),
+('INF-0000010', 'LC10', '2024-01-10', 10, 10, 'BCD-192', 2, 'LIC010', 'Sin notas', FALSE);
 
 -- Inserciones para la tabla evidencias
 INSERT INTO evidencias (archivo)
 VALUES
-('evidencia1.jpg'),
-('evidencia2.png'),
-('evidencia3.pdf'),
-('evidencia4.jpg'),
-('evidencia5.png'),
-('evidencia6.pdf'),
-('evidencia7.jpg'),
-('evidencia8.png'),
-('evidencia9.pdf'),
-('evidencia10.jpg');
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'),
+('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...');
 
 -- Inserciones para la tabla infracciones_evidencias
 INSERT INTO infracciones_evidencias (id_infraccion, id_evidencia)
