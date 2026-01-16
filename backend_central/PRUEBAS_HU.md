@@ -42,13 +42,14 @@ El oficial llena los datos y envía la multa.
 ```json
 {
     "fecha": "2024-01-15T14:30:00Z",
-    "latitud": 19.432608, 
-    "longitud": -99.133209,
+    "latitud": 19.503005, 
+    "longitud": -99.146881,
     "placa": "A01-AAA",
     "niv": "NIV1234567890",
     "id_agente": 1,
     "notas": "Estacionado en lugar prohibido",
-    "infracciones": ["ART-06"], 
+    "infracciones": ["ART-06"],
+    "id_licencia": "789456", 
     "ubicacion_infractor": {
         "municipio": "Cuauhtémoc",
         "vialidad": "Av. Paseo de la Reforma",

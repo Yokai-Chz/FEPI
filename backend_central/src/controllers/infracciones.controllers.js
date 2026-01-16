@@ -36,6 +36,14 @@ export const createInfraccion = async (req, res) => {
             return res.status(400).json({ error: "Faltan placa y niv en el JSON" });
         }
 
+        if(!id_agente) {
+            return res.status(400).json({ error: "Falta id_agente en el JSON" });
+        }
+
+        if (!infracciones || !Array.isArray(infracciones) || infracciones.length === 0) {
+            return res.status(400).json({ error: "Faltan infracciones en el JSON o no es un arreglo válido" });
+        }
+
         // Necesita: latitud , longitud
         const ubicacion_id = await createUbicacion(req, res);
         if (!ubicacion_id) return; 
@@ -57,8 +65,9 @@ export const createInfraccion = async (req, res) => {
         }
 
         const adeudos = await getAdeudosInternal(reporteVehiculo.placa);
+        let warningMessage = null;
         if (adeudos.length > 0) {
-            return res.status(400).json({ error: "El vehículo tiene adeudos pendientes. No se puede generar la infracción." });
+            warningMessage = "El vehículo tiene adeudos pendientes.";
         }
 
         const id_vehiculo = reporteVehiculo.placa || reporteVehiculo.niv;
@@ -115,7 +124,8 @@ export const createInfraccion = async (req, res) => {
         res.status(201).json({
             mensaje: "Infracción creada exitosamente",
             id_infraccion: infraccion_id,
-            linea_captura: lineaCaptura
+            linea_captura: lineaCaptura,
+            advertencia: warningMessage
         });
 
     } catch (error) {
