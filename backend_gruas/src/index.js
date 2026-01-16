@@ -5,10 +5,20 @@ import gruasRoutes from './routes/gruas.routes.js';
 import depositosRoutes from './routes/depositos.routes.js';
 import solicitudesRoutes from './routes/solicitudes.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import { createSolicitud } from './controllers/solicitudes.controllers.js'; // Importación directa para debug
  
 const app = express();
 
 app.use(express.json());
+
+// Middleware de Log para Diagnóstico
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Recibida petición: ${req.method} ${req.url}`);
+  next();
+});
+
+// RUTA DIRECTA DE DEBUG
+app.post('/solicitudes-debug', createSolicitud);
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
