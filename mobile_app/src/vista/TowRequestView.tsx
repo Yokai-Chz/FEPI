@@ -23,32 +23,18 @@ export default function TowRequestView() {
   const lonInicial = params.lon ? parseFloat(params.lon as string) : null;
   const direccionInicial = params.direccion as string || "Obteniendo ubicación...";
 
-<<<<<<< HEAD
-=======
   // Folio de la infracción previamente creada (Ligado)
   const FOLIO_INFRACCION = "INF-RECIENTE"; 
 
->>>>>>> 036f17da (fix request)
   // --- ESTADOS ---
   const [ubicacion, setUbicacion] = useState<{
     lat: number | null, 
     lng: number | null,
     direccion: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-  }>({
-    lat: null, lng: null, direccion: "Obteniendo ubicación..." 
-=======
-=======
->>>>>>> main
   }>({ 
     lat: latInicial, 
     lng: lonInicial, 
     direccion: direccionInicial 
-<<<<<<< HEAD
->>>>>>> 036f17da (fix request)
-=======
->>>>>>> main
   });
   
   // Si ya tenemos datos, no cargamos GPS de nuevo al inicio
@@ -56,6 +42,8 @@ export default function TowRequestView() {
   const [referencia, setReferencia] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [servicioConfirmado, setServicioConfirmado] = useState<any>(null);
+
+  const vehiculoData = { placa: placaInicial };
 
   useEffect(() => {
     if (!latInicial) {
@@ -201,19 +189,10 @@ export default function TowRequestView() {
         </View>
 
         <View style={styles.summaryCard}>
-<<<<<<< HEAD
-          <Text style={styles.summaryLabel}>RESUMEN DE SOLICITUD:</Text>
-          <Text style={styles.summaryText}>• Vehículo: {vehiculoData?.placa}</Text>
-          <Text style={styles.summaryText}>• Oficial: {user?.id}</Text>
-=======
           <Text style={styles.summaryLabel}>VINCULADO A:</Text>
           <Text style={styles.summaryText}>• Multa: {FOLIO_INFRACCION}</Text>
           <Text style={styles.summaryText}>• Vehículo: {placaInicial}</Text>
           <Text style={styles.summaryText}>• Oficial: {user?.name} ({user?.sector})</Text>
-<<<<<<< HEAD
->>>>>>> 036f17da (fix request)
-=======
->>>>>>> main
         </View>
 
       </ScrollView>
