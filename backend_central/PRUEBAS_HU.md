@@ -8,29 +8,17 @@ Este documento detalla los flujos de prueba (JSONs y Endpoints) para validar el 
 
 **Objetivo:** Verificar registro de multas, carga de evidencias, ubicación y alertas previas.
 
-### Paso 1: Consultar Alertas de Vehículo (Previo a multar)
-El oficial escanea/ingresa la placa para ver si tiene reporte de robo o adeudos.
+### Paso 1: Verificación Interna del Vehículo (Previo a multar)
+El sistema realiza una verificación interna de la placa para ver si tiene reporte de robo.
 
-*   **Endpoint:** `GET /vehiculos/ABC-123`
-*   **Prueba:** Verificar que el sistema alerte si hay robo o adeudos.
+*   **Prueba:** Verificar que el sistema identifique si hay reporte de robo.
 
-**Respuesta Esperada (Con alertas):**
+**Respuesta Interna Esperada (Ejemplo con reporte):**
 ```json
 {
   "placa": "ABC-123",
-  "encontradoEnRepuve": true,
-  "datosRepuve": {
-    "placa": "ABC-123",
-    "tieneReporteRobo": true  // <--- ALERTA DE ROBO
-  },
-  "adeudos": [
-    {
-      "linea_captura": "...",
-      "estatus": "PENDIENTE", // <--- ALERTA DE ADEUDO
-      "monto_total": 1500
-    }
-  ],
-  "totalAdeudos": 1
+  "niv": "...",
+  "tieneReporteRobo": true
 }
 ```
 
@@ -47,7 +35,6 @@ El oficial llena los datos y envía la multa.
     "placa": "A01-AAA",
     "niv": "NIV1234567890",
     "id_agente": 1,
-    "notas": "Estacionado en lugar prohibido",
     "infracciones": ["ART-06"],
     "id_licencia": "789456", 
     "ubicacion_infractor": {
@@ -77,30 +64,6 @@ El oficial llena los datos y envía la multa.
 ```
 
 ### Casos Particulares (Validaciones)
-
-**Caso A: Vehículo con Reporte de Robo**
-Si el vehículo detectado (por placa o NIV) tiene reporte de robo activo en REPUVE:
-
-*   **Respuesta Esperada (Código 400):**
-```json
-{
-    "error": "El vehículo tiene reporte de robo. No se puede generar la infracción."
-}
-```
-
-**Caso B: Vehículo con Adeudos Pendientes**
-Si el vehículo tiene multas o tenencias vencidas/pendientes en Finanzas:
-
-*   **Respuesta Esperada (Código 201):**
-    La infracción **SÍ** se crea, pero se incluye una advertencia.
-```json
-{
-    "mensaje": "Infracción creada exitosamente",
-    "id_infraccion": 124,
-    "linea_captura": "...",
-    "advertencia": "El vehículo tiene adeudos pendientes."
-}
-```
 
 **Caso C: Licencia no válida o no encontrada**
 Si se proporciona un `id_licencia` que no existe en el sistema de SEMOVI:
@@ -146,9 +109,7 @@ Oficial ingresa por primera vez.
 **Respuesta Esperada:**
 ```json
 {
-    "token": "eyJhbGci...",
-    "primer_ingreso": true, // <--- Indica que DEBE cambiar contraseña
-    "mensaje": "Primer inicio de sesión detectado..."
+    "token": "eyJhbGci..."
 }
 ```
 

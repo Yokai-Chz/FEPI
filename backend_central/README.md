@@ -181,7 +181,6 @@ Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, v
         "niv": "1GKSKDEFGH1234567",
         "id_agente": "AGENTE-001",
         "id_licencia": "LIC-XYZ",
-        "descripcion": "Exceso de velocidad.",
         "infracciones": ["ART-01", "ART-04"],
         "ubicacion_infractor": {
              "municipio": "Cuauhtémoc",
