@@ -2,10 +2,12 @@
   "name": "backend_gruas",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --env-file=.env --watch src/index.js"
+    "dev": "node --env-file=.env --watch src/index.js",
+    "dev:test": "node --env-file=.env src/index.js & sleep 4 && node src/test-simulation.js"
   },
   "keywords": [],
   "author": "",

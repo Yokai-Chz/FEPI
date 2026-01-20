@@ -1,80 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
-  SafeAreaView, 
-  Alert,           
-  ActivityIndicator,
+import React from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  SafeAreaView,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { X, Check, MapPin, Plus } from 'lucide-react-native';
-import { InfraccionService, InfraccionData } from '../services/InfraccionService';
+import { X } from 'lucide-react-native';
+
+// Hook de Lógica
+import { useNuevaInfraccionForm } from '../hooks/useNuevaInfraccionForm';
+
+// Componentes UI
+import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
+import InfractionSelector from '../../components/infraccion/InfractionSelector';
+import EvidencePreview from '../../components/infraccion/EvidencePreview';
+import AdditionalIdInput from '../../components/infraccion/AdditionalIdInput';
+import OffenderAddressInput from '../../components/infraccion/OffenderAddressInput';
+import CommercialVehicleToggle from '../../components/infraccion/CommercialVehicleToggle';
+import LocationInput from '../../components/infraccion/LocationInput';
+import NotesInput from '../../components/infraccion/NotesInput';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
-
-  // ESTADOS
-  const [placa, setPlaca] = useState("");
-  const [busqueda, setBusqueda] = useState("");
-  const [articuloSeleccionado, setArticuloSeleccionado] = useState<any>(null);
-  const [ubicacion, setUbicacion] = useState("Av. Insurgentes Sur 123, CDMX");
-  const [esComercial, setEsComercial] = useState(false);
-  const [fotosCapturadas, setFotosCapturadas] = useState([]);
-  const [enviando, setEnviando] = useState(false);
-
-  // Validación
-  const esFormularioValido = 
-    placa.trim().length >= 3 && 
-    articuloSeleccionado !== null && 
-    ubicacion.trim().length >= 10;
-
-  // FUNCIONES
-  const seleccionarArticulo = () => {
-    setArticuloSeleccionado({
-      titulo: "Art. 9, Fracc II: Semáforo en Rojo",
-      sancion: "10 a 20 UMAs ($1,085 - $2,171)"
-    });
-    setBusqueda(""); 
-  };
-
-  const finalizarBoleta = async () => {
-  setEnviando(true);
-
-  // Extraemos el ID del título 
-  const idArticulo = articuloSeleccionado?.titulo.includes("Art. 9") ? "ART-09" : "ART-GENERICO";
-
-  const nuevaMulta: InfraccionData = {
-    fecha: new Date().toISOString(),
-    latitud: 19.4326, 
-    longitud: -99.1332,
-    placa: placa, 
-    niv: "1GKSKDEFGH1234567", 
-    id_agente: "4429", 
-    id_licencia: "LIC-XYZ",
-    infracciones: [idArticulo]
-  };
-
-  try {
-    const respuesta = await InfraccionService.enviar(nuevaMulta);
-    
-    Alert.alert(
-      "ÉXITO", 
-      `Infracción registrada correctamente.\nFolio: ${respuesta.folioInfraccion || 'Pendiente'}`,
-      [{ text: "OK", onPress: () => router.replace('/dashboard') }]
-    );
-  } catch (error) {
-    Alert.alert("ERROR DE RED", "No se pudo conectar con el servidor. Verifica que el backend esté activo y en la misma red.");
-  } finally {
-    setEnviando(false);
-  }
-};
+  
+  // Extraemos toda la lógica y estado del Hook
+  const {
+    placa, setPlaca,
+    esForaneo, setEsForaneo,
+    niv, setNiv,
+    licencia, setLicencia,
+    domicilioInfractor, setDomicilioInfractor,
+    notas, setNotas,
+    articulosSeleccionados,
+    ubicacionHecho, setUbicacionHecho,
+    esComercial, setEsComercial,
+    fotos,
+    enviando,
+    cargandoUbicacion,
+    esFormularioValido,
+    isNotesValid,
+    obtenerUbicacionActual,
+    agregarArticulo,
+    removerArticulo,
+    finalizarBoleta
+  } = useNuevaInfraccionForm();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -101,126 +77,79 @@ export default function NuevaInfraccionView() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           
           {/* SECCIÓN DATOS DEL VEHÍCULO */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>DATOS DEL VEHÍCULO</Text>
-            <View style={[
-              styles.placaInputContainer, 
-              placa.length >= 3 && styles.placaValida
-            ]}>
-              <TextInput
-                style={styles.placaInput}
-                value={placa}
-                onChangeText={(text) => setPlaca(text.toUpperCase())}
-                placeholder="PLACA"
-                placeholderTextColor="#d1d5db"
-                autoCapitalize="characters"
-                maxLength={10}
-              />
-            </View>
-            {placa.length >= 3 && (
-              <View style={styles.alertSuccess}>
-                <Check color="#047857" size={14} />
-                <Text style={styles.alertText}>SCC: Vehículo sin reporte de robo</Text>
-              </View>
-            )}
-          </View>
+          <VehiclePlateInput 
+            value={placa} 
+            onChange={setPlaca} 
+            isForeign={esForaneo}
+            onForeignChange={setEsForaneo}
+          />
+
+          {/* IDENTIFICACIÓN ADICIONAL */}
+          <AdditionalIdInput 
+            niv={niv} 
+            onChangeNiv={setNiv} 
+            licencia={licencia} 
+            onChangeLicencia={setLicencia} 
+          />
+
+          {/* DOMICILIO DEL CONDUCTOR */}
+          <OffenderAddressInput 
+            address={domicilioInfractor} 
+            onChange={setDomicilioInfractor} 
+          />
 
           {/* SECCIÓN MOTIVO */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>MOTIVO DE INFRACCIÓN</Text>
-            {!articuloSeleccionado ? (
-              <View>
-                <TextInput
-                  style={styles.searchInput}
-                  value={busqueda}
-                  onChangeText={setBusqueda}
-                  placeholder="Buscar artículo o falta..."
-                />
-                {busqueda.toLowerCase().includes("art") && (
-                  <TouchableOpacity style={styles.suggestion} onPress={seleccionarArticulo}>
-                    <Text style={styles.suggestionTitle}>Art. 9, Fracc II: Semáforo en Rojo</Text>
-                    <Text style={styles.suggestionSub}>TOCA PARA SELECCIONAR</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ) : (
-              <View style={styles.selectedArtBox}>
-                <TouchableOpacity 
-                  style={styles.changeBtn} 
-                  onPress={() => setArticuloSeleccionado(null)}
-                >
-                  <Text style={styles.changeBtnText}>CAMBIAR</Text>
-                </TouchableOpacity>
-                <Text style={styles.artTitle}>{articuloSeleccionado.titulo}</Text>
-                <Text style={styles.artSancion}>{articuloSeleccionado.sancion}</Text>
-              </View>
-            )}
-          </View>
+          <InfractionSelector
+            selectedArticles={articulosSeleccionados}
+            onAdd={agregarArticulo}
+            onRemove={removerArticulo}
+          />
 
           {/* EVIDENCIA */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>EVIDENCIA FOTOGRÁFICA</Text>
-            <View style={styles.fotoRow}>
-              {/* Simulación de fotos capturadas */}
-              {fotosCapturadas.map((_, i) => (
-                <View key={i} style={styles.fotoPreview} />
-              ))}
-              <TouchableOpacity 
-                style={styles.addFotoBtn}
-                onPress={() => router.push('/evidencia')}
-              >
-                <Plus color="#BC955C" size={30} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.fotoStatus}>REQUIERE 4 FOTOS REGLAMENTARIAS</Text>
-          </View>
+          <EvidencePreview 
+            photos={fotos}
+            onAddPress={() => router.push('/evidencia')}
+          />
 
           {/* Vehículo Comercial */}
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>¿VEHÍCULO COMERCIAL / CARGA?</Text>
-            <TouchableOpacity 
-              style={[styles.switch, esComercial && styles.switchOn]}
-              onPress={() => setEsComercial(!esComercial)}
-            >
-              <View style={[styles.switchDot, esComercial && styles.switchDotOn]} />
-            </TouchableOpacity>
-          </View>
+          <CommercialVehicleToggle 
+            value={esComercial} 
+            onValueChange={setEsComercial} 
+          />
 
-          {/* Ubicación */}
-          <View style={styles.card}>
-            <View style={styles.ubiHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>UBICACIÓN ACTUAL</Text>
-                <TextInput
-                  style={styles.ubiInput}
-                  value={ubicacion}
-                  onChangeText={setUbicacion}
-                  multiline
-                />
-              </View>
-              <TouchableOpacity style={styles.ubiIconBtn}>
-                <Image source={require('../../assets/images/icon_ubi.png')} style={styles.ubiIcon} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* Ubicación del Hecho */}
+          <LocationInput 
+            value={ubicacionHecho} 
+            onChange={setUbicacionHecho} 
+            onRefresh={obtenerUbicacionActual} 
+            isLoading={cargandoUbicacion} 
+          />
+
+          {/* Notas / Garantía */}
+          <NotesInput 
+            value={notas} 
+            onChange={setNotas} 
+            isForeign={esForaneo} 
+            isValid={isNotesValid} 
+          />
 
         </ScrollView>
 
         {/* Botón Final */}
         <View style={styles.footer}>
           <TouchableOpacity 
-            style={[styles.mainBtn, (!esFormularioValido || enviando) && styles.mainBtnDisabled]}
-            disabled={!esFormularioValido || enviando}
+            style={[styles.mainBtn, !esFormularioValido && styles.mainBtnDisabled]}
+            disabled={!esFormularioValido}
             onPress={finalizarBoleta}
           >
-          {enviando ? (
-            <ActivityIndicator color="white" /> 
+            {enviando ? (
+              <ActivityIndicator color="white" />
             ) : (
-          <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
-          {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
-          </Text>
-          )}
-        </TouchableOpacity>
+              <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
+                {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -236,47 +165,10 @@ const styles = StyleSheet.create({
   headerTitle: { color: 'white', fontWeight: 'bold', fontSize: 14, letterSpacing: 1 },
   
   scrollContent: { padding: 16, paddingBottom: 120 },
-  card: { backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 16, elevation: 2 },
-  cardRow: { backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionLabel: { color: '#691C32', fontWeight: '900', fontSize: 11, marginBottom: 16, letterSpacing: 1 },
   
-  placaInputContainer: { borderWidth: 2, borderStyle: 'dashed', borderColor: '#e5e7eb', borderRadius: 16, padding: 16 },
-  placaValida: { borderColor: '#d1fae5', backgroundColor: '#f0fdf4' },
-  placaInput: { textAlign: 'center', fontSize: 32, fontWeight: '900', color: '#1f2937' },
-  
-  alertSuccess: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ecfdf5', padding: 10, borderRadius: 8, marginTop: 12 },
-  alertText: { color: '#047857', fontSize: 10, fontWeight: 'bold' },
-
-  searchInput: { backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#f3f4f6', borderRadius: 12, padding: 14, fontSize: 14 },
-  suggestion: { marginTop: 12, backgroundColor: '#FFF9F2', borderWidth: 2, borderStyle: 'dashed', borderColor: '#BC955C', borderRadius: 12, padding: 14 },
-  suggestionTitle: { fontSize: 12, fontWeight: 'bold', color: '#1f2937' },
-  suggestionSub: { fontSize: 9, color: '#BC955C', fontWeight: '900', textAlign: 'right', marginTop: 4 },
-
-  selectedArtBox: { backgroundColor: 'rgba(105,28,50,0.05)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(105,28,50,0.1)' },
-  artTitle: { fontSize: 13, fontWeight: 'bold', color: '#691C32', paddingRight: 60 },
-  artSancion: { fontSize: 10, color: '#6b7280', marginTop: 4, fontWeight: 'bold' },
-  changeBtn: { position: 'absolute', top: 12, right: 12 },
-  changeBtnText: { color: '#691C32', fontSize: 10, fontWeight: '900', textDecorationLine: 'underline' },
-
-  fotoRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  addFotoBtn: { width: 64, height: 64, borderWidth: 2, borderStyle: 'dashed', borderColor: '#BC955C', backgroundColor: '#fdfaf6', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  fotoPreview: { width: 64, height: 64, backgroundColor: '#e5e7eb', borderRadius: 12 },
-  fotoStatus: { fontSize: 10, color: '#9ca3af', fontWeight: 'bold' },
-
-  rowLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151' },
-  switch: { width: 48, height: 24, backgroundColor: '#e5e7eb', borderRadius: 12, padding: 2 },
-  switchOn: { backgroundColor: '#691C32' },
-  switchDot: { width: 20, height: 20, backgroundColor: 'white', borderRadius: 10 },
-  switchDotOn: { alignSelf: 'flex-end' },
-
-  ubiHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  ubiInput: { fontSize: 12, fontWeight: 'bold', color: '#4b5563', backgroundColor: '#f9fafb', borderRadius: 12, padding: 12 },
-  ubiIconBtn: { width: 48, height: 48, backgroundColor: '#f9fafb', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  ubiIcon: { width: 30, height: 30 },
-
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'white' },
   mainBtn: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 16, alignItems: 'center', elevation: 8 },
   mainBtnDisabled: { backgroundColor: '#e5e7eb', elevation: 0 },
   mainBtnText: { color: 'white', fontWeight: '900', letterSpacing: 2, fontSize: 14 },
-  mainBtnTextDisabled: { color: '#9ca3af' }
+  mainBtnTextDisabled: { color: '#9ca3af' },
 });

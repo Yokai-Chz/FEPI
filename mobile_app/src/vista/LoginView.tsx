@@ -1,96 +1,119 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  Image, KeyboardAvoidingView, Platform, SafeAreaView, 
-  ScrollView, Alert, ActivityIndicator 
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
-import { AuthService } from '../services/AuthService';
 
 export default function LoginView() {
+  const { signIn } = useAuth();
   const router = useRouter();
-  
-  // ESTADOS
-  const [usuario, setUsuario] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [placa, setPlaca] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
 
-  // LÓGICA DE CONEXIÓN
   const manejarLogin = async () => {
-    if (!usuario || !password) {
-      Alert.alert("Campos incompletos", "Por favor ingrese su ID y Contraseña.");
+    if (!placa || !password) {
+      setError('Por favor, ingrese sus credenciales');
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
+    setError('');
+    
     try {
-      // Simulación de llamada al Backend 
-      // fetch a `${API_URL}/api/auth/login`
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulando red
-
-      // SUPONGAMOS QUE EL BACKEND RESPONDE ESTO:
-      const respuestaBack = {
-        success: true,
-        token: "JWT_GENERADO_POR_EL_BACKEND_2026",
-        oficial: { id: "4429", nombre: "García" }
-      };
-
-      if (respuestaBack.success) {
-        // GUARDAMOS EL TOKEN 
-        await AuthService.guardarToken(respuestaBack.token);
-        router.replace('/dashboard');
+      const data = await signIn({ username:placa, password });
+      if (data.primer_ingreso) {
+        setShowFirstLoginModal(true);
       }
-    } catch (error) {
-      Alert.alert("Error de Conexión", "No se pudo validar con el servidor de la SSC.");
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const handleFirstLoginContinue = () => {
+    setShowFirstLoginModal(false);
+    router.push('/change-password');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={styles.flex1}
+        >
           
           {/* Header con Logos */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <View style={styles.iconBox}>
-                <Image source={require('../../assets/images/logo_gobierno.png')} style={styles.logoIcon} resizeMode="contain" />
+                <Image 
+                  source={require('../../assets/images/logo_gobierno.png')} 
+                  style={styles.logoIcon} 
+                  resizeMode="contain" 
+                />
               </View>
               <Text style={styles.logoText}>GOBIERNO CDMX</Text>
             </View>
+
             <View style={styles.logoContainer}>
               <View style={styles.iconBox}>
-                <Image source={require('../../assets/images/logo_ssc.png')} style={styles.logoIcon} resizeMode="contain" />
+                <Image 
+                  source={require('../../assets/images/logo_ssc.png')} 
+                  style={styles.logoIcon} 
+                  resizeMode="contain" 
+                />
               </View>
               <Text style={styles.logoText}>SECRETARÍA DE{'\n'}SEGURIDAD CIUDADANA</Text>
             </View>
           </View>
 
+          {/* Titulo Central */}
           <View style={styles.centerTitleContainer}>
             <Text style={styles.mainTitle}>SSC</Text>
             <Text style={styles.subTitle}>CONTROL DE TRÁNSITO</Text>
           </View>
 
-          {/* Inputs */}
+          {/* Tarjeta Blanca */}
           <View style={styles.card}>
             <Text style={styles.welcomeTitle}>Bienvenido</Text>
             <Text style={styles.welcomeSub}>Ingrese sus credenciales de oficial</Text>
 
-            {/* Input Placa/ID */}
+            {/* Mensaje de Error */}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            {/* Input Placa */}
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>NÚMERO DE PLACA / ID</Text>
               <View style={styles.inputContainer}>
-                <Image source={require('../../assets/images/icon_user.png')} style={styles.inputIcon} />
+                <Image 
+                  source={require('../../assets/images/icon_user.png')} 
+                  style={styles.inputIcon} 
+                />
                 <TextInput 
                   placeholder="982734"
                   placeholderTextColor="#9ca3af"
                   style={styles.input}
-                  value={usuario}
-                  onChangeText={setUsuario}
-                  keyboardType="numeric"
+                  value={placa}
+                  onChangeText={setPlaca}
+                  autoCapitalize="none"
                 />
               </View>
             </View>
@@ -99,7 +122,10 @@ export default function LoginView() {
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>CONTRASEÑA (NIP)</Text>
               <View style={styles.inputContainer}>
-                <Image source={require('../../assets/images/icon_candado.png')} style={styles.inputIcon} />
+                <Image 
+                  source={require('../../assets/images/icon_candado.png')} 
+                  style={styles.inputIcon} 
+                />
                 <TextInput 
                   placeholder="••••••••"
                   placeholderTextColor="#9ca3af"
@@ -109,18 +135,21 @@ export default function LoginView() {
                   onChangeText={setPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Image source={require('../../assets/images/icon_ojo.png')} style={styles.eyeIcon} />
+                  <Image 
+                    source={require('../../assets/images/icon_ojo.png')} 
+                    style={styles.eyeIcon} 
+                  />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Botón con estado de Carga */}
+            {/* Botón Iniciar Turno */}
             <TouchableOpacity 
-              style={[styles.button, loading && { opacity: 0.7 }]} 
+              style={[styles.button, isLoading && styles.buttonDisabled]} 
               onPress={manejarLogin}
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.buttonText}>INICIAR TURNO</Text>
@@ -132,10 +161,36 @@ export default function LoginView() {
             </TouchableOpacity>
           </View>
 
+          {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>SECRETARÍA DE SEGURIDAD CIUDADANA</Text>
             <View style={styles.footerBar} />
           </View>
+
+          {/* Modal Primer Ingreso */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showFirstLoginModal}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.warningIconContainer}>
+                   <Text style={{fontSize: 30, color: 'white'}}>!</Text>
+                </View>
+                <Text style={styles.modalTitle}>Aviso Importante</Text>
+                <Text style={styles.modalText}>
+                  Por seguridad, es necesario actualizar su contraseña en su primer ingreso al sistema.
+                </Text>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleFirstLoginContinue}
+                >
+                  <Text style={styles.modalButtonText}>CONTINUAR</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
 
         </KeyboardAvoidingView>
       </ScrollView>
@@ -160,6 +215,8 @@ const styles = StyleSheet.create({
   welcomeTitle: { fontSize: 24, fontWeight: 'bold', color: '#1f2937' },
   welcomeSub: { color: '#9ca3af', fontSize: 14, marginBottom: 32 },
 
+  errorText: { color: '#dc2626', fontSize: 12, marginBottom: 16, fontWeight: 'bold', textAlign: 'center' },
+
   inputWrapper: { marginBottom: 24 },
   label: { color: '#691C32', fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#f3f4f6', borderRadius: 16, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 16 : 8 },
@@ -168,6 +225,7 @@ const styles = StyleSheet.create({
   eyeIcon: { width: 24, height: 24, opacity: 0.4 },
 
   button: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 24, alignItems: 'center', marginTop: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5, elevation: 5 },
+  buttonDisabled: { opacity: 0.7 },
   buttonText: { color: 'white', fontWeight: 'bold', letterSpacing: 2, fontSize: 12 },
 
   forgotContainer: { marginTop: 40, alignItems: 'center', marginBottom: 20 },
@@ -175,5 +233,61 @@ const styles = StyleSheet.create({
 
   footer: { backgroundColor: 'white', paddingBottom: 24, alignItems: 'center' },
   footerText: { color: '#d1d5db', fontSize: 9, fontWeight: 'bold', letterSpacing: 1 },
-  footerBar: { width: 48, height: 4, backgroundColor: '#f3f4f6', borderRadius: 2, marginTop: 12 }
+  footerBar: { width: 48, height: 4, backgroundColor: '#f3f4f6', borderRadius: 2, marginTop: 12 },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  warningIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: '#691C32',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  }
 });

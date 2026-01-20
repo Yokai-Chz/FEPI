@@ -1,0 +1,14 @@
+services:
+  finanzas-app:
+    container_name: finanzas-srv
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    # Si en el futuro agregas una base de datos real, aqui irian las variables
+    # env_file:
+    #   - .env
