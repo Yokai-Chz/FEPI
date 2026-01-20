@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # --- BACKEND PRINCIPAL ---
   backend-central:
     build:
       context: ./backend_central
@@ -12,17 +13,26 @@ services:
       - PORT=4000
       - DB_HOST=postgres_db
       - DB_PORT=5432
-      - DB_USER=fepi_user
-      - DB_PASSWORD=fepi_password
-      - DB_NAME=fepi_db
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=postgres
       - JWT_SECRET=mysecretkey
       - API_FINANZAS=http://finanzas:3001/api/finanzas/linea-captura
       - API_REPUVE=http://mock-server:8000/api/semovi/vehiculo
       - API_SEMOVI_CONDUCTORES=http://mock-server:8000/api/semovi/licencia/
+    networks:
+      - fepi-net
+    
+    # AQUÍ ESTÁ EL CAMBIO CLAVE:
     depends_on:
-      - mock-server
-      - finanzas
+      db:
+        condition: service_healthy  
+      mock-server:
+        condition: service_started  
+      finanzas:
+        condition: service_started  
 
+  # --- MOCK SERVER ---
   mock-server:
     build:
       context: ./backend_externo/mockServer
@@ -33,6 +43,7 @@ services:
     networks:
       - fepi-net
 
+  # --- FINANZAS ---
   finanzas:
     build:
       context: ./backend_externo/finanzas
@@ -42,7 +53,29 @@ services:
     networks:
       - fepi-net
 
-  
+  # --- BASE DE DATOS ---
+  db:
+    build:
+      context: ./shared_dtos/datos/container 
+      dockerfile: Dockerfile
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5430:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fepi-net
+    
+    # AGREGAMOS EL HEALTHCHECK AQUÍ:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s    
+      timeout: 5s     
+      retries: 5     
 
 networks:
   fepi-net:
