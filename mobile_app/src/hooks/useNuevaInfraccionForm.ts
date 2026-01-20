@@ -106,6 +106,17 @@ export const useNuevaInfraccionForm = () => {
     setArticulosSeleccionados((prev) => prev.filter(a => a.id !== id));
   };
 
+  // Artículos que ameritan corralón (Grúa)
+  const ARTICULOS_CORRALON = [
+    "ART-30-I",    // Banquetas
+    "ART-30-XII",  // Doble fila
+    "ART-30-XV",   // Discapacitados
+    "ART-34-II",   // Arrancones
+    "ART-45",      // Sin placas
+    "ART-50",      // Alcohol
+    "ART-11-X-a"   // Carril confinado
+  ];
+
   const finalizarBoleta = async () => {
     setEnviando(true);
     try {
@@ -134,18 +145,56 @@ export const useNuevaInfraccionForm = () => {
 
       await infraccionesService.crearInfraccion(dataToSend, user?.token || "");
 
-      Alert.alert(
-        "Éxito", 
-        `✅ Infracción registrada.\n${!coordenadas ? '(Guardada localmente por falta de conexión)' : ''}`,
-        [{ 
-          text: "Terminar", 
-          onPress: () => {
-            resetFotos(); 
-            router.replace('/dashboard');
-          } 
-        }]
-      );
+      // Verificar si amerita grúa
+      const ameritaGrua = articulosSeleccionados.some(a => ARTICULOS_CORRALON.includes(a.id));
+
+      if (ameritaGrua) {
+        Alert.alert(
+            "Infracción Registrada",
+            "La infracción incluye motivos que ameritan remisión al depósito. ¿Desea solicitar una grúa ahora?",
+            [
+                {
+                    text: "No, finalizar",
+                    style: "cancel",
+                    onPress: () => {
+                        resetFotos();
+                        router.replace('/dashboard');
+                    }
+                },
+                {
+                    text: "Sí, solicitar grúa",
+                    onPress: () => {
+                        resetFotos();
+                        // Pasamos parámetros a la pantalla de grúa
+                        router.push({
+                            pathname: '/grua',
+                            params: { 
+                                placa: placa,
+                                lat: coordenadas?.lat,
+                                lon: coordenadas?.lon,
+                                direccion: ubicacionHecho
+                            }
+                        });
+                    }
+                }
+            ]
+        );
+      } else {
+          Alert.alert(
+            "Éxito", 
+            `✅ Infracción registrada.\n${!coordenadas ? '(Guardada localmente por falta de conexión)' : ''}`,
+            [{ 
+              text: "Terminar", 
+              onPress: () => {
+                resetFotos(); 
+                router.replace('/dashboard');
+              } 
+            }]
+          );
+      }
+
     } catch (error) {
+      console.error("Error en finalizarBoleta:", error);
       Alert.alert("Error", "No se pudo procesar la infracción");
     } finally {
       setEnviando(false);
