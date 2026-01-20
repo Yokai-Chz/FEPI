@@ -65,8 +65,7 @@ CREATE TABLE asociacion_infracciones (
 );
 
 
-
--- Inserciones para la tabla ubicacion
+-- 1. Inserciones para la tabla ubicacion
 INSERT INTO ubicacion (municipio, vialidad, numero_exterior, nombre_asentamiento, codigo_postal, nombre_entidad, coordenadas)
 VALUES
 ('Municipio A', 'Vialidad 1', '123', 'Asentamiento 1', '12345', 'Entidad A', '19.4326, -99.1332'),
@@ -80,23 +79,38 @@ VALUES
 ('Municipio I', 'Vialidad 9', '718', 'Asentamiento 9', '90123', 'Entidad I', '19.4326, -99.1332'),
 ('Municipio J', 'Vialidad 10', '192', 'Asentamiento 10', '01234', 'Entidad J', '20.6597, -103.3496');
 
--- Inserciones para la tabla catalogo_infracciones
+-- 2. Inserciones para la tabla catalogo_infracciones (Nuevo catálogo)
 INSERT INTO catalogo_infracciones (articulo, fraccion, descripcion, monto)
 VALUES
-('ART-01', 'I', 'Descripción de la infracción 1', '100.00'),
-('ART-02', 'II', 'Descripción de la infracción 2', '150.00'),
-('ART-03', 'III', 'Descripción de la infracción 3', '200.00'),
-('ART-04', 'IV', 'Descripción de la infracción 4', '250.00'),
-('ART-05', 'V', 'Descripción de la infracción 5', '300.00'),
-('ART-06', 'VI', 'Descripción de la infracción 6', '350.00'),
-('ART-09', 'VII', 'Descripción de la infracción 7', '400.00'),
-('ART-10', 'VIII', 'Descripción de la infracción 8', '450.00'),
-('ART-12', 'IX', 'Descripción de la infracción 9', '500.00'),
-('ART-60', 'X', 'Descripción de la infracción 10', '550.00');
+('ART-06', NULL, 'No respetar preferencia de paso o prioridad de uso de peatones.', '10.00'),
+('ART-07', 'I', 'Insultar, denigrar o golpear al personal de tránsito.', '20.00'),
+('ART-07', 'III', 'Uso indebido del claxon o provocar ruido excesivo con el motor.', '5.00'),
+('ART-08', 'I', 'No obedecer indicaciones de agentes o señalización vial.', '10.00'),
+('ART-08', 'V', 'Rebasar por la derecha o no dar 1.50m de distancia a ciclistas/motociclistas.', '5.00'),
+('ART-09', 'I', 'Exceder límites de velocidad en carriles centrales (Máx. 80 km/h).', '10.00'),
+('ART-09', 'II', 'Exceder límites de velocidad en vías primarias (Máx. 50 km/h).', '10.00'),
+('ART-09', 'V', 'Exceder velocidad en zonas escolares o de hospitales (Máx. 20 km/h).', '10.00'),
+('ART-10', 'VI', 'No respetar la luz roja del semáforo o invadir cruce peatonal.', '10.00'),
+('ART-11', 'VIII', 'Dar vuelta en "U" en lugares prohibidos o cerca de curvas.', '20.00'),
+('ART-11', 'X-a', 'Circular sobre carriles exclusivos para el transporte público.', '40.00'),
+('ART-11', 'XIV', 'Circular detrás de vehículos de emergencia (distancia < 50m).', '20.00'),
+('ART-21', 'I', 'Motocicletas: Circular sobre aceras o áreas peatonales.', '10.00'),
+('ART-21', 'II', 'Motocicletas: Circular por vías ciclistas exclusivas.', '20.00'),
+('ART-30', 'I', 'Estacionarse sobre banquetas, cruces peatonales o ciclovías.', '10.00'),
+('ART-30', 'XII', 'Estacionarse en doble o más filas.', '10.00'),
+('ART-30', 'XV', 'Estacionarse en lugares para personas con discapacidad.', '20.00'),
+('ART-34', 'II', 'Organizar o participar en arrancones (competencias de velocidad).', '21.00'),
+('ART-37', 'II-b', 'No utilizar el cinturón de seguridad (conductor y pasajeros).', '5.00'),
+('ART-38', 'II-c', 'Cargar personas o animales entre brazos y piernas al conducir.', '10.00'),
+('ART-38', 'II-e', 'Utilizar teléfono celular o dispositivos móviles al conducir.', '30.00'),
+('ART-39', NULL, 'Transportar menores de 12 años sin sistema de retención infantil.', '5.00'),
+('ART-43', 'VII', 'Instalar película de control solar (polarizado) mayor al 20%.', '20.00'),
+('ART-44', 'I', 'No portar licencia de conducir o permiso vigente.', '10.00'),
+('ART-45', NULL, 'No contar con placas o tarjeta de circulación vigente.', '20.00'),
+('ART-46', NULL, 'No contar con póliza de seguro de responsabilidad civil vigente.', '20.00'),
+('ART-50', NULL, 'Conducir bajo influjo de alcohol (>0.4 mg/l aire) o narcóticos.', '0.00');
 
-
-
--- Inserciones para la tabla personas
+-- 3. Inserciones para la tabla personas
 INSERT INTO personas (nombre, apellido_paterno, apellido_materno, curp, rfc)
 VALUES
 ('Juan', 'Pérez', 'Gómez', 'CURP001', 'RFC001'),
@@ -110,22 +124,24 @@ VALUES
 ('Miguel', 'Torres', 'Reyes', 'CURP009', 'RFC009'),
 ('Elena', 'Vargas', 'Morales', 'CURP010', 'RFC010');
 
--- Inserciones para la tabla usuarios
-INSERT INTO usuarios (id_persona, username, password_hash, tipo_usuario, placa_oficial)
+-- 4. Inserciones para la tabla usuarios
+-- NOTA: Se eliminó 'placa_oficial' porque no existe en la definición de la tabla.
+INSERT INTO usuarios (id_persona, username, password_hash, tipo_usuario)
 VALUES
-(1, 'juanp', 'hash1', 'admin', NULL),
-(2, 'mariag', 'hash2', 'oficial', 'P001'),
-(3, 'josel', 'hash3', 'consulta', NULL),
-(4, 'anam', 'hash4', 'admin', NULL),
-(5, 'luish', 'hash5', 'oficial', 'P002'),
-(6, 'laurag', 'hash6', 'consulta', NULL),
-(7, 'carlosd', 'hash7', 'admin', NULL),
-(8, 'sofiar', 'hash8', 'oficial', 'P003'),
-(9, 'miguelt', 'hash9', 'consulta', NULL),
-(10, 'elenav', 'hash10', 'admin', NULL);
+(1, '11111', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'admin'),
+(2, '22222', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'oficial'),
+(3, '33333', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'consulta'),
+(4, '44444', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'admin'),
+(5, '55555', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'oficial'),
+(6, '66666', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'consulta'),
+(7, '77777', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'admin'),
+(8, '88888', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'oficial'),
+(9, '99999', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'consulta'),
+(10, '00000', '$2b$10$z1ivW2NySj29cjwIVkAP7uB7Aff59sT2ae51TLOaD3RLbOQvZ4WSy', 'admin');
 
--- Inserciones para la tabla infracciones
-INSERT INTO infracciones (linea_captura, fecha, ubicacion, vehiculo_infraccionado, id_usuario, licencia_infractor)
+-- 5. Inserciones para la tabla infracciones
+-- NOTA: Se cambió 'ubicacion' por 'ubicacion_infraccion' para coincidir con la tabla.
+INSERT INTO infracciones (linea_captura, fecha, ubicacion_infraccion, vehiculo_infraccionado, id_usuario, licencia_infractor)
 VALUES
 ('LC1', '2024-01-01', 1, 'ABC-123', 2, 'LIC001'),
 ('LC2', '2024-01-02', 2, 'DEF-456', 5, 'LIC002'),
@@ -138,7 +154,7 @@ VALUES
 ('LC9', '2024-01-09', 9, 'YZA-718', 8, 'LIC009'),
 ('LC10', '2024-01-10', 10, 'BCD-192', 2, 'LIC010');
 
--- Inserciones para la tabla asociacion_infracciones
+-- 6. Inserciones para la tabla asociacion_infracciones
 INSERT INTO asociacion_infracciones (id_catalogo_infraccion, id_infraccion)
 VALUES
 (1, 1),
@@ -151,4 +167,3 @@ VALUES
 (8, 8),
 (9, 9),
 (10, 10);
-

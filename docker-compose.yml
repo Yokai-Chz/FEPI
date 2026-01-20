@@ -1,19 +1,27 @@
 version: '3.8'
 
 services:
-  postgres_db:
-    image: postgres:15-alpine
-    container_name: postgres_db
-    environment:
-      POSTGRES_DB: fepi_db
-      POSTGRES_USER: fepi_user
-      POSTGRES_PASSWORD: fepi_password
+  backend-central:
+    build:
+      context: ./backend_central
+      dockerfile: Dockerfile
+    container_name: backend-central
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - fepi-net
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DB_HOST=postgres_db
+      - DB_PORT=5432
+      - DB_USER=fepi_user
+      - DB_PASSWORD=fepi_password
+      - DB_NAME=fepi_db
+      - JWT_SECRET=mysecretkey
+      - API_FINANZAS=http://finanzas:3001/api/finanzas/linea-captura
+      - API_REPUVE=http://mock-server:8000/api/semovi/vehiculo
+      - API_SEMOVI_CONDUCTORES=http://mock-server:8000/api/semovi/licencia/
+    depends_on:
+      - mock-server
+      - finanzas
 
   mock-server:
     build:
@@ -34,29 +42,7 @@ services:
     networks:
       - fepi-net
 
-  backend-central:
-    build:
-      context: ./backend_central
-    container_name: backend-central
-    ports:
-      - "4000:4000"
-    environment:
-      - PORT=4000
-      - DB_HOST=postgres_db
-      - DB_PORT=5432
-      - DB_USER=fepi_user
-      - DB_PASSWORD=fepi_password
-      - DB_NAME=fepi_db
-      - JWT_SECRET=mysecretkey
-      - API_FINANZAS=http://finanzas:3001/api/finanzas/linea-captura
-      - API_REPUVE=http://mock-server:8000/api/semovi/vehiculo
-      - API_SEMOVI_CONDUCTORES=http://mock-server:8000/api/semovi/licencia/
-    depends_on:
-      - postgres_db
-      - mock-server
-      - finanzas
-    networks:
-      - fepi-net
+  
 
 networks:
   fepi-net:

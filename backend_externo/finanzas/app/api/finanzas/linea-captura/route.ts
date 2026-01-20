@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
     for (const id of motivosIds) {
       const multa = CATALOGO_MULTAS[id];
       if (multa) {
-        totalUmas += multa.umas;
+        totalUmas += Number(multa.umas);
         conceptos.push(multa.descripcion);
       } else {
         motivosInvalidos.push(id);
