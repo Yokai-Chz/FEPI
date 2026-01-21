@@ -36,12 +36,21 @@ export const login = async (req, res) => {
             `UPDATE "usuarios" SET token_version = $1, ultima_conexion = $2 WHERE id_usuario = $3`,
             [nuevoTokenVersion, new Date().toISOString(), user.id_usuario]
         );
+        
+        const personaResult = await pool.query(
+            'SELECT apellido_paterno FROM "personas" WHERE id_persona = $1',
+            [user.id_persona]
+        )
+
+        const persona = personaResult.rows[0];
 
         // Incluimos token_version en el JWT para validación futura en middleware
         const token = jwt.sign(
             { 
                 id_usuario: user.id_usuario, 
                 username: user.username,
+                apellido: persona.apellido_paterno,
+                primer_ingreso: primerIngreso,
                 token_version: nuevoTokenVersion 
             }, 
             JWT_SECRET, 
@@ -50,7 +59,6 @@ export const login = async (req, res) => {
         
         res.status(200).json({ 
             token,
-            primer_ingreso: primerIngreso,
             mensaje: primerIngreso ? "Primer inicio de sesión detectado. Se recomienda cambio de contraseña." : "Login exitoso"
         });
     } catch (err) {

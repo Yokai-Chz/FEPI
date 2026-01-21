@@ -29,4 +29,4 @@ setTimeout(() => {
     console.log('Conectado con Base de datos exitosamente.');
   }
 });
-}, 15000);
+}, 5000);

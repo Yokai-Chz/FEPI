@@ -16,12 +16,14 @@ export const createInfraccion = async (req, res) => {
             placa, 
             niv, 
             id_agente, 
-            id_licencia, 
+            id_licencia,
+            descripcion, 
             infracciones, 
             ubicacion_infractor,
-            evidencias, 
-            notas
+            evidencias 
         } = req.body;
+
+        let notas = descripcion;
 
         // Validamos que lleguen los datos del body
         if (!latitud || !longitud) {
