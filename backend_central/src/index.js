@@ -4,6 +4,8 @@ import infraccionesRouter from './routes/infracciones.routes.js';
 import catalogosRouter from './routes/catalogo.routes.js';
 import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import vehiculosRoutes from './routes/vehiculos.routes.js';
+import oficialesRouter from './routes/oficiales.routes.js';
  
 const app = express();
 
@@ -17,6 +19,8 @@ app.use(infraccionesRouter);
 app.use(catalogosRouter);
 app.use(userRoutes);
 app.use(authRoutes);
+app.use(vehiculosRoutes);
+app.use(oficialesRouter);
 
 
 app.listen(PORT, () => {

@@ -4,7 +4,7 @@ Este documento sirve como referencia para probar los endpoints de la API utiliza
 
 ## Configuración Base
 
--   **URL Base:** `http://localhost:3000` (o el puerto configurado en tu `.env`)
+-   **URL Base:** `http://localhost:4000` (o el puerto configurado en tu `.env`)
 -   **Headers Comunes:**
     -   `Content-Type`: `application/json`
 
@@ -13,7 +13,7 @@ Este documento sirve como referencia para probar los endpoints de la API utiliza
 ## 1. Autenticación
 
 ### Login de Usuario
-Genera un token JWT para autenticación (si se implementa seguridad en rutas futuras).
+Genera un token JWT para autenticación.
 
 -   **Método:** `POST`
 -   **Endpoint:** `/login`
@@ -86,7 +86,49 @@ Actualiza los datos personales asociados al usuario.
 
 ---
 
-## 3. Catálogos
+## 3. Oficiales
+
+### Crear Oficial
+Registra un nuevo oficial.
+
+-   **Método:** `POST`
+-   **Endpoint:** `/oficiales`
+-   **JSON Body:**
+    ```json
+    {
+        "nombre": "Pedro",
+        "apellido_paterno": "Infante",
+        "apellido_materno": "Cruz",
+        "curp": "INCP550415HDFRRN01",
+        "rfc": "INCP550415XYZ",
+        "username": "pedroinfante",
+        "password": "password456"
+    }
+    ```
+
+### Listar Oficiales
+Obtiene todos los oficiales activos.
+
+-   **Método:** `GET`
+-   **Endpoint:** `/oficiales`
+
+### Obtener Oficial por ID
+-   **Método:** `GET`
+-   **Endpoint:** `/oficiales/1` (Reemplaza `1` por un ID real)
+
+---
+
+## 4. Vehículos
+
+### Consultar Vehículo por Placa
+Obtiene información sobre un vehículo, incluyendo reporte de robo y adeudos.
+
+-   **Método:** `GET`
+-   **Endpoint:** `/vehiculos/ABC-123` (Reemplaza `ABC-123` por una placa real)
+
+---
+
+## 5. Catálogos
 
 ### Obtener Catálogo de Infracciones
 Muestra la lista de tipos de infracciones disponibles para asignar.
@@ -96,10 +138,10 @@ Muestra la lista de tipos de infracciones disponibles para asignar.
 
 ---
 
-## 4. Infracciones
+## 6. Infracciones
 
 ### Crear Nueva Infracción
-Registra una infracción completa. Incluye validación de vehículo, geocodificación de ubicación, asociación de motivos y generación de línea de captura.
+Registra una infracción completa.
 
 -   **Método:** `POST`
 -   **Endpoint:** `/infracciones`
@@ -107,38 +149,56 @@ Registra una infracción completa. Incluye validación de vehículo, geocodifica
     ```json
     {
         "fecha": "2024-01-15T14:30:00Z",
-        "latitud": 19.432608,
-        "longitud": -99.133209,
-        "placa": "ABC-123",
+        "latitud": 19.503005, 
+        "longitud": -99.146881,
+        "placa": "A01-AAA",
         "niv": "NIV1234567890",
         "id_agente": 1,
-        "id_licencia": "LIC-9999",
-        "infracciones": ["ART-01", "ART-02"], 
+        "notas": "Estacionado en lugar prohibido",
+        "infracciones": ["ART-06"],
+        "id_licencia": "789456", 
         "ubicacion_infractor": {
-             "municipio": "Cuauhtémoc",
-             "vialidad": "Av. Paseo de la Reforma",
-             "numero_exterior": "S/N",
-             "nombre_asentamiento": "Centro",
-             "codigo_postal": "06000",
-             "nombre_entidad": "Ciudad de México"
+            "municipio": "Cuauhtémoc",
+            "vialidad": "Av. Paseo de la Reforma",
+            "numero_exterior": "S/N",
+            "nombre_asentamiento": "Centro",
+            "codigo_postal": "06000",
+            "nombre_entidad": "Ciudad de México"
         },
         "evidencias": [
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
         ]
     }
     ```
-    > **Nota:** El campo `infracciones` recibe un array con los identificadores (artículos) del catálogo. `evidencias` espera cadenas en base64.
 
 ### Listar Infracciones
-(Nota: Este endpoint actualmente devuelve un mensaje de placeholder)
-
 -   **Método:** `GET`
 -   **Endpoint:** `/infracciones`
+
+### Obtener Infracción por ID o Folio
+-   **Método:** `GET`
+-   **Endpoint:** `/infracciones/1` o `/infracciones/INF-0000001`
+
+### Actualizar Notas de Infracción
+-   **Método:** `PATCH`
+-   **Endpoint:** `/infracciones/1`
+-   **Header (Autenticación):** `Authorization: Bearer <tu_token_jwt>`
+-   **JSON Body:**
+    ```json
+    {
+        "notas": "Se actualiza la nota."
+    }
+    ```
+
+### Eliminar Infracción (Borrado Lógico)
+-   **Método:** `DELETE`
+-   **Endpoint:** `/infracciones/1`
+-   **Header (Autenticación):** `Authorization: Bearer <tu_token_jwt>`
 
 ---
 
 ## Notas Adicionales
 
--   **Base de Datos:** Asegúrate de que los contenedores de Docker (si usas Docker) o tu servicio local de PostgreSQL estén corriendo.
--   **IDs:** Los IDs mostrados en los ejemplos (`1`, `ART-01`) deben existir previamente en tu base de datos (tablas `usuarios` y `catalogo_infracciones`). Usa los scripts de inicialización (`bd.sql`) para tener datos de prueba.
+-   **Base de Datos:** Asegúrate de que tu servicio de PostgreSQL esté corriendo.
+-   **IDs:** Los IDs en los ejemplos (`1`, `ART-01`) deben existir en tu base de datos.
+-   **Autenticación:** Para los endpoints que lo requieran, no olvides incluir el token JWT en el header `Authorization`.

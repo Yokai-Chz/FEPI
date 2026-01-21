@@ -165,6 +165,91 @@ Baja lógica de usuario (Soft delete).
 
 ---
 
+### Oficiales
+
+#### `POST /oficiales`
+Crea un nuevo oficial.
+
+-   **Valores Esperados (Request Body):**
+    ```json
+    {
+        "nombre": "Juan",
+        "apellido_paterno": "Perez",
+        "apellido_materno": "Lopez",
+        "curp": "PELO800101HDFRRN09",
+        "rfc": "PELO800101XXX",
+        "username": "juanperez",
+        "password": "securepassword"
+    }
+    ```
+
+-   **Respuesta Exitosa (Código 201):**
+    ```json
+    {
+        "id_usuario": 1,
+        "username": "juanperez",
+        "tipo_usuario": "oficial"
+    }
+    ```
+
+#### `GET /oficiales`
+Obtiene la lista de todos los oficiales.
+
+-   **Respuesta Exitosa (Código 200):**
+    ```json
+    [
+        {
+            "id_usuario": 1,
+            "username": "juanperez",
+            "tipo_usuario": "oficial",
+            "borrado": false,
+            "nombre": "Juan",
+            "apellido_paterno": "Perez",
+            "apellido_materno": "Lopez",
+            "curp": "PELO800101HDFRRN09",
+            "rfc": "PELO800101XXX"
+        },
+        ...
+    ]
+    ```
+
+#### `GET /oficiales/:id`
+Obtiene un oficial por ID.
+
+-   **Respuesta Exitosa (Código 200):** Objeto de oficial completo.
+-   **Respuesta Error (404):** `{"error": "Oficial no encontrado"}`
+
+---
+
+### Vehículos
+
+#### `GET /vehiculos/:placa`
+Consulta la información de un vehículo por su placa.
+
+-   **Respuesta Exitosa (Código 200):**
+    ```json
+    {
+        "placa": "ABC-123",
+        "encontradoEnRepuve": true,
+        "datosRepuve": {
+            "placa": "ABC-123",
+            "tieneReporteRobo": true
+        },
+        "adeudos": [
+            {
+                "linea_captura": "...",
+                "estatus": "PENDIENTE",
+                "monto_total": 1500
+            }
+        ],
+        "totalAdeudos": 1,
+        "montoTotalAdeudos": 1500
+    }
+    ```
+-   **Respuesta Error (404):** `{"error": "Vehículo no encontrado"}`
+
+---
+
 ### Infracciones
 
 #### `POST /infracciones`
@@ -174,23 +259,29 @@ Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, v
 -   **Valores Esperados (Request Body):**
     ```json
     {
-        "fecha": "2024-01-01T12:00:00Z",
-        "latitud": 19.4326,
-        "longitud": -99.1332,
-        "placa": "ABC-123",
-        "niv": "1GKSKDEFGH1234567",
-        "id_agente": "AGENTE-001",
-        "id_licencia": "LIC-XYZ",
-        "infracciones": ["ART-01", "ART-04"],
+        "fecha": "2024-01-15T14:30:00Z",
+        "latitud": 19.503005, 
+        "longitud": -99.146881,
+        "placa": "A01-AAA",
+        "niv": "NIV1234567890",
+        "id_agente": 1,
+        "notas": "Estacionado en lugar prohibido",
+        "infracciones": ["ART-06"],
+        "id_licencia": "789456", 
         "ubicacion_infractor": {
-             "municipio": "Cuauhtémoc",
-             "vialidad": "Reforma",
-             "numero_exterior": "222",
-             "nombre_asentamiento": "Juárez",
-             "codigo_postal": "06600",
-             "nombre_entidad": "CDMX"
+            "municipio": "Cuauhtémoc",
+            "vialidad": "Av. Paseo de la Reforma",
+            "numero_exterior": "S/N",
+            "nombre_asentamiento": "Centro",
+            "codigo_postal": "06000",
+            "nombre_entidad": "Ciudad de México"
         },
-        "evidencias": ["base64string...", "base64string..."]
+        "evidencias": [
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUB...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUC...",
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUD..."
+        ]
     }
     ```
 
@@ -199,7 +290,9 @@ Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, v
     {
         "mensaje": "Infracción creada exitosamente",
         "id_infraccion": 12345,
-        "linea_captura": "12345678901234567890"
+        "folio": "INF-0012345",
+        "linea_captura": "12345678901234567890",
+        "advertencia": "El vehículo tiene adeudos pendientes."
     }
     ```
 
@@ -208,6 +301,42 @@ Crea una nueva infracción. Este endpoint orquesta la creación de ubicación, v
     -   **Código 400:** `{"error": "Faltan placa y niv en el JSON"}`
     -   **Código 500:** `{"error": "Sucedio un error al insertar la infraccion"}`
 
+#### `GET /infracciones`
+Obtiene la lista de todas las infracciones.
+
+-   **Respuesta Exitosa (Código 200):**
+    Un arreglo de objetos, donde cada objeto representa una infracción.
+
+#### `GET /infracciones/:id`
+Obtiene una infracción por ID o Folio.
+
+-   **Respuesta Exitosa (Código 200):** Objeto de infracción completo.
+-   **Respuesta Error (404):** `{"error": "Infracción no encontrada"}`
+
+#### `PATCH /infracciones/:id`
+Actualiza las notas de una infracción.
+
+-   **Valores Esperados (Request Body):**
+    ```json
+    {
+        "notas": "Nueva nota de la infracción."
+    }
+    ```
+
+-   **Respuesta Exitosa (Código 200):**
+    ```json
+    {
+        "mensaje": "Infracción actualizada exitosamente",
+        "infraccion": { ... }
+    }
+    ```
+
+#### `DELETE /infracciones/:id`
+Baja lógica de una infracción (Soft delete).
+
+-   **Respuesta Exitosa (Código 204):** No content.
+
+---
 
 ### Catálogo
 

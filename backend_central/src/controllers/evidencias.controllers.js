@@ -12,14 +12,13 @@ export const createEvidencias = async (id_infraccion, evidencias) => {
             throw new Error("Faltan datos en el JSON para crear evidencia");
         }
 
+        // Insertar solo el archivo en la tabla evidencias
         const query = `
             INSERT INTO evidencias (
-                "id_infraccion", 
                 "archivo"
-            ) VALUES ($1, $2) RETURNING id_evidencia`;
+            ) VALUES ($1) RETURNING id_evidencia`;
 
         const values = [
-            id_infraccion,
             imgenBase64
         ];
 
@@ -37,5 +36,5 @@ export const createEvidencias = async (id_infraccion, evidencias) => {
         await pool.query(queryAsociarEvidencias, valuesAsociar);
     }
 
-    return 
+    return; 
 }

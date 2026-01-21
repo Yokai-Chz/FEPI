@@ -17,8 +17,9 @@ export const pool = new pg.Pool({
   host: DB_CONFIG.host,
   database: DB_CONFIG.database,
   password: DB_CONFIG.password,
-  port: DB_CONFIG.port  
+  port: DB_CONFIG.port,
 });
+
 //Agrega un temporizador de 15 segundos para ejecutarlo
 setTimeout(() => {
     pool.query('SELECT NOW()', (err, res) => {
@@ -28,4 +29,4 @@ setTimeout(() => {
     console.log('Conectado con Base de datos exitosamente.');
   }
 });
-}, 15000);
+}, 5000);

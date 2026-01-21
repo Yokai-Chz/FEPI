@@ -9,6 +9,8 @@ services:
     container_name: backend-central
     ports:
       - "4000:4000"
+    env_file:
+      - ./backend_central/.env
     environment:
       - PORT=4000
       - DB_HOST=postgres_db
