@@ -8,14 +8,14 @@ import { NextRequest, NextResponse } from 'next/server';
 const UMA_VALOR = 108.57;
 
 const CATALOGO_MULTAS: Record<string, { descripcion: string; umas: number | string }> = {
-  'ART-06': { descripcion: 'No respetar preferencia de paso o prioridad de uso de peatones', umas: 20 },
-  'ART-07-I': { descripcion: 'Insultar, denigrar o golpear al personal de tránsito', umas: 30 },
-  'ART-07-III': { descripcion: 'Uso indebido del claxon o provocar ruido excesivo con el motor', umas: 10 },
-  'ART-08-I': { descripcion: 'No obedecer indicaciones de agentes o señalización vial', umas: 20 },
-  'ART-08-V': { descripcion: 'Rebasar por la derecha o no dar 1.50m de distancia a ciclistas/motociclistas', umas: 10 },
-  'ART-09-I': { descripcion: 'Exceder límites de velocidad en carriles centrales (Máx. 80 km/h)', umas: 20 },
-  'ART-09-II': { descripcion: 'Exceder límites de velocidad en vías primarias (Máx. 50 km/h)', umas: 20 },
-  'ART-09-V': { descripcion: 'Exceder velocidad en zonas escolares o de hospitales (Máx. 20 km/h)', umas: 20 },
+  'ART-6': { descripcion: 'No respetar preferencia de paso o prioridad de uso de peatones', umas: 20 },
+  'ART-7-I': { descripcion: 'Insultar, denigrar o golpear al personal de tránsito', umas: 30 },
+  'ART-7-III': { descripcion: 'Uso indebido del claxon o provocar ruido excesivo con el motor', umas: 10 },
+  'ART-8-I': { descripcion: 'No obedecer indicaciones de agentes o señalización vial', umas: 20 },
+  'ART-8-V': { descripcion: 'Rebasar por la derecha o no dar 1.50m de distancia a ciclistas/motociclistas', umas: 10 },
+  'ART-9-I': { descripcion: 'Exceder límites de velocidad en carriles centrales (Máx. 80 km/h)', umas: 20 },
+  'ART-9-II': { descripcion: 'Exceder límites de velocidad en vías primarias (Máx. 50 km/h)', umas: 20 },
+  'ART-9-V': { descripcion: 'Exceder velocidad en zonas escolares o de hospitales (Máx. 20 km/h)', umas: 20 },
   'ART-10-VI': { descripcion: 'No respetar la luz roja del semáforo o invadir cruce peatonal', umas: 20 },
   'ART-11-VIII': { descripcion: 'Dar vuelta en "U" en lugares prohibidos o cerca de curvas', umas: 30 },
   'ART-11-X-A': { descripcion: 'Circular sobre carriles exclusivos para el transporte público', umas: 60 },
