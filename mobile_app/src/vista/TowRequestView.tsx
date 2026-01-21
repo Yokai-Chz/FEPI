@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 9, fontWeight: 'bold', color: '#9ca3af', marginBottom: 4 },
   infoValue: { fontSize: 16, fontWeight: '900', color: '#1f2937', marginBottom: 16 },
   divider: { height: 1, backgroundColor: '#f3f4f6', marginBottom: 16 },
+  rowInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'white' },
   mainBtn: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 16, alignItems: 'center', width: '100%' },

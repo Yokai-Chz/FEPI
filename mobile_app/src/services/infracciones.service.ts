@@ -1,5 +1,4 @@
 import * as Network from 'expo-network';
-import * as FileSystem from 'expo-file-system/legacy';
 import { API_CONFIG, getAuthHeader } from './api.config';
 import { storageService } from './storage.service';
 
@@ -36,6 +35,8 @@ export const infraccionesService = {
       ...data,
       evidencias: evidenciasSimuladas
     };
+
+    console.log('Data infraccion: \n', JSON.stringify(payload, null, 2))
 
     const response = await fetch(`${API_CONFIG.BASE_URL}/infracciones`, {
       method: 'POST',

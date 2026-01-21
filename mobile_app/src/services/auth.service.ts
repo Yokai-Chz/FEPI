@@ -45,7 +45,7 @@ export const authService = {
         //    },1500);
         //});
         
-        console.log('Sending login payload:', JSON.stringify(credentials, null, 2));
+        //console.log('Sending login payload:', JSON.stringify(credentials, null, 2));
         
         const response = await fetch(`${API_CONFIG.BASE_URL}/login`, {
             method: 'POST',
@@ -53,7 +53,7 @@ export const authService = {
             body: JSON.stringify(credentials),
         });
 
-        console.log(response);
+        //console.log(response);
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -73,6 +73,8 @@ export const authService = {
                 primer_ingreso: data.primer_ingreso
             };
 
+            console.log('Data user: \n', JSON.stringify(decoded, null, 2 ))
+
             await this.saveSession(user.token, user.id);
             return user;
         } catch (error) {
@@ -83,6 +85,14 @@ export const authService = {
 
     async changePassword(userId: string, newPassword: string): Promise<void> {
         const token = await this.getToken();
+
+        console.log('Sending user: ', userId);
+        
+        console.log('Data: \n', JSON.stringify({
+            newPassword: newPassword
+        }, null, 2))
+
+
         const response = await fetch(`${API_CONFIG.BASE_URL}/users/${userId}/password`, {
             method: 'PATCH',
             headers: {
@@ -94,6 +104,8 @@ export const authService = {
             }),
         });
 
+        console.log("",response);        
+
         if(!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.mensaje || errorData.message || "Error de autenticación");
@@ -101,7 +113,7 @@ export const authService = {
 
         const data = await response.json();
 
-        console.log(data)
+        return data;
     },
 
 

@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -9,13 +10,12 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'expo-router';
-import LoginHeader from '../../components/auth/LoginHeader';
-import AuthInput from '../../components/auth/AuthInput';
 import AuthButton from '../../components/auth/AuthButton';
+import AuthInput from '../../components/auth/AuthInput';
 import FirstLoginModal from '../../components/auth/FirstLoginModal';
-import { COLORS, SPACING } from '../../constants/theme';
+import LoginHeader from '../../components/auth/LoginHeader';
+import { COLORS } from '../../constants/theme';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginView() {
   const { signIn } = useAuth();
@@ -37,6 +37,8 @@ export default function LoginView() {
     
     try {
       const data = await signIn({ username:placa, password });
+      
+
       if (data.primer_ingreso) {
         setShowFirstLoginModal(true);
       }
