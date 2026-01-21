@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Image, SafeAreaView, Alert } 
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Zap, Check, Trash2, Camera, X } from 'lucide-react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useInfraccion } from '../context/InfraccionContext';
 
 export default function EvidenceCaptureView() {
@@ -36,16 +37,27 @@ export default function EvidenceCaptureView() {
 
   const tomarFoto = async () => {
     if (cameraRef.current && !fotos[seleccion]) {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.5,
-        base64: true,
-      });
-      
-      setFoto(seleccion, photo.uri);
-      
-      // Saltar a la siguiente categoría vacía
-      const siguiente = categorias.find(c => !fotos[c.id] && c.id !== seleccion);
-      if (siguiente) setSeleccion(siguiente.id);
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.5,
+          base64: false, // No necesitamos base64 aquí, manipularemos el archivo
+        });
+
+        // Redimensionar y comprimir
+        const manipulated = await ImageManipulator.manipulateAsync(
+          photo.uri,
+          [{ resize: { width: 800 } }], // Reducir ancho a 800px (mantiene aspect ratio)
+          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        
+        setFoto(seleccion, manipulated.uri);
+        
+        // Saltar a la siguiente categoría vacía
+        const siguiente = categorias.find(c => !fotos[c.id] && c.id !== seleccion);
+        if (siguiente) setSeleccion(siguiente.id);
+      } catch (error) {
+        Alert.alert("Error", "No se pudo procesar la foto");
+      }
     }
   };
 

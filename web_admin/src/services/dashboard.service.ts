@@ -51,9 +51,14 @@ export interface RecaudacionStats {
 export interface Oficial {
   id: string;
   placa: string;
-  nombreCompleto: string;
+  nombres: string;
+  paterno: string;
+  materno: string;
+  nombreCompleto: string; // Se mantendrá como computado o recibido concatenado para facilidad visual
   sector: string;
   estatusApp: 'AUTORIZADO' | 'INACTIVO';
+  curp?: string;
+  rfc?: string;
 }
 
 // =============================================

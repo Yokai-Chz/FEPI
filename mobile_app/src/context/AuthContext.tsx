@@ -5,7 +5,7 @@ import { authService, loginCredential, userData } from "../services/auth.service
 interface AuthContextType {
     user: userData | null;
     isLoading: boolean;
-    signIn: (credentials: loginCredential) => Promise<void>;
+    signIn: (credentials: loginCredential) => Promise<userData>;
     signOut: () => Promise<void>;
 }
 
@@ -20,17 +20,15 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         const loadStoregeData = async () => {
             try {
                 const token = await authService.getToken();
-                const id = await authService.getId();
 
-                if (token && id) {
-                    //Llamar al servicio para obtener los datos
-
-                    setUser({
-                        id: id,
-                        name: "Oficial Perez",
-                        sector: "SECTOR JUAREZ",
-                        token: token,
-                    });
+                if (token) {
+                    const userData = await authService.getUserFromToken(token);
+                    if (userData) {
+                        setUser(userData as userData);
+                    } else {
+                        // Si el token es inválido o no se pudo decodificar
+                        await authService.logout();
+                    }
                 }   
             } catch (e) {
                 console.log(e);
@@ -45,7 +43,14 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         try {
             const data = await authService.login(credentials);
             setUser(data);
-            router.replace('/dashboard');
+            
+            // Si es primer ingreso, no redirigimos automáticamente.
+            // La vista de Login se encargará de mostrar el modal y navegar a cambio de contraseña.
+            if (!data.primer_ingreso) {
+                router.replace('/dashboard');
+            }
+            
+            return data;
         } catch (e) {
             throw e;
         }

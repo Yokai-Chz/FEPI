@@ -1,118 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
-  SafeAreaView, 
-  Alert,
+import React from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  SafeAreaView,
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
-import * as Location from 'expo-location';
 
-// Componentes
+// Hook de Lógica
+import { useNuevaInfraccionForm } from '../hooks/useNuevaInfraccionForm';
+
+// Componentes UI
 import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
-import InfractionSelector, { InfractionArticle } from '../../components/infraccion/InfractionSelector';
+import InfractionSelector from '../../components/infraccion/InfractionSelector';
 import EvidencePreview from '../../components/infraccion/EvidencePreview';
-import { useInfraccion } from '../context/InfraccionContext';
+import AdditionalIdInput from '../../components/infraccion/AdditionalIdInput';
+import OffenderAddressInput from '../../components/infraccion/OffenderAddressInput';
+import CommercialVehicleToggle from '../../components/infraccion/CommercialVehicleToggle';
+import LocationInput from '../../components/infraccion/LocationInput';
+import NotesInput from '../../components/infraccion/NotesInput';
 
 export default function NuevaInfraccionView() {
   const router = useRouter();
-  const { fotos, resetFotos } = useInfraccion();
-
-  // --- ESTADOS ---
-  const [placa, setPlaca] = useState("");
-  const [articulosSeleccionados, setArticulosSeleccionados] = useState<InfractionArticle[]>([]);
   
-  // Ubicación y GPS
-  const [ubicacion, setUbicacion] = useState("");
-  const [coordenadas, setCoordenadas] = useState<{lat: number, lon: number} | null>(null);
-  const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
-
-  const [esComercial, setEsComercial] = useState(false);
-
-  // Validación
-  const esFormularioValido = 
-    placa.trim().length >= 3 && 
-    articulosSeleccionados.length > 0 && 
-    ubicacion.trim().length >= 5;
-
-  // --- FUNCIONES ---
-  
-  useEffect(() => {
-    obtenerUbicacion();
-    // No reseteamos fotos al montar para permitir volver de la cámara sin perder datos
-    // resetFotos() se llamaría al enviar exitosamente o salir
-  }, []);
-
-  const obtenerUbicacion = async () => {
-    setCargandoUbicacion(true);
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para registrar la infracción.');
-        setCargandoUbicacion(false);
-        return;
-      }
-
-      // Obtener Coordenadas
-      let location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-      setCoordenadas({ lat: latitude, lon: longitude });
-
-      // Geocodificación Inversa (Coords -> Dirección)
-      let addressResponse = await Location.reverseGeocodeAsync({ latitude, longitude });
-      
-      if (addressResponse.length > 0) {
-        const addr = addressResponse[0];
-        const direccionFormateada = `${addr.street || 'Calle desconocida'} ${addr.streetNumber || ''}, ${addr.district || ''}, ${addr.city || ''}`;
-        setUbicacion(direccionFormateada.trim());
-      } else {
-        setUbicacion(`${latitude}, ${longitude}`);
-      }
-
-    } catch (error) {
-      Alert.alert('Error GPS', 'No se pudo obtener la ubicación actual.');
-    } finally {
-      setCargandoUbicacion(false);
-    }
-  };
-
-  const agregarArticulo = (articulo: InfractionArticle) => {
-    setArticulosSeleccionados((prev) => [...prev, articulo]);
-  };
-
-  const removerArticulo = (id: string) => {
-    setArticulosSeleccionados((prev) => prev.filter(a => a.id !== id));
-  };
-
-  const finalizarBoleta = () => {
-    console.log("Enviando al backend:", {
-      placa,
-      infracciones: articulosSeleccionados,
-      gps: coordenadas,
-      fotos: fotos // Aquí van las URIs temporales
-    });
-
-    Alert.alert(
-      "Éxito", 
-      `✅ Folio generado.\nGPS: ${coordenadas?.lat.toFixed(4)}, ${coordenadas?.lon.toFixed(4)}`,
-      [{ 
-        text: "OK", 
-        onPress: () => {
-          resetFotos(); // Limpiar fotos tras éxito
-          router.replace('/dashboard');
-        } 
-      }]
-    );
-  };
+  // Extraemos toda la lógica y estado del Hook
+  const {
+    placa, setPlaca,
+    esForaneo, setEsForaneo,
+    niv, setNiv,
+    licencia, setLicencia,
+    domicilioInfractor, setDomicilioInfractor,
+    notas, setNotas,
+    articulosSeleccionados,
+    ubicacionHecho, setUbicacionHecho,
+    esComercial, setEsComercial,
+    fotos,
+    enviando,
+    cargandoUbicacion,
+    esFormularioValido,
+    isNotesValid,
+    obtenerUbicacionActual,
+    agregarArticulo,
+    removerArticulo,
+    finalizarBoleta
+  } = useNuevaInfraccionForm();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -142,6 +80,22 @@ export default function NuevaInfraccionView() {
           <VehiclePlateInput 
             value={placa} 
             onChange={setPlaca} 
+            isForeign={esForaneo}
+            onForeignChange={setEsForaneo}
+          />
+
+          {/* IDENTIFICACIÓN ADICIONAL */}
+          <AdditionalIdInput 
+            niv={niv} 
+            onChangeNiv={setNiv} 
+            licencia={licencia} 
+            onChangeLicencia={setLicencia} 
+          />
+
+          {/* DOMICILIO DEL CONDUCTOR */}
+          <OffenderAddressInput 
+            address={domicilioInfractor} 
+            onChange={setDomicilioInfractor} 
           />
 
           {/* SECCIÓN MOTIVO */}
@@ -158,42 +112,26 @@ export default function NuevaInfraccionView() {
           />
 
           {/* Vehículo Comercial */}
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>¿VEHÍCULO COMERCIAL / CARGA?</Text>
-            <TouchableOpacity 
-              style={[styles.switch, esComercial && styles.switchOn]}
-              onPress={() => setEsComercial(!esComercial)}
-            >
-              <View style={[styles.switchDot, esComercial && styles.switchDotOn]} />
-            </TouchableOpacity>
-          </View>
+          <CommercialVehicleToggle 
+            value={esComercial} 
+            onValueChange={setEsComercial} 
+          />
 
-          {/* Ubicación */}
-          <View style={styles.card}>
-            <View style={styles.ubiHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sectionLabel}>UBICACIÓN ACTUAL (GPS)</Text>
-                <TextInput
-                  style={styles.ubiInput}
-                  value={ubicacion}
-                  onChangeText={setUbicacion}
-                  multiline
-                  placeholder="Obteniendo ubicación..."
-                />
-              </View>
-              <TouchableOpacity 
-                style={styles.ubiIconBtn} 
-                onPress={obtenerUbicacion}
-                disabled={cargandoUbicacion}
-              >
-                {cargandoUbicacion ? (
-                  <ActivityIndicator color="#691C32" />
-                ) : (
-                  <Image source={require('../../assets/images/icon_ubi.png')} style={styles.ubiIcon} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* Ubicación del Hecho */}
+          <LocationInput 
+            value={ubicacionHecho} 
+            onChange={setUbicacionHecho} 
+            onRefresh={obtenerUbicacionActual} 
+            isLoading={cargandoUbicacion} 
+          />
+
+          {/* Notas / Garantía */}
+          <NotesInput 
+            value={notas} 
+            onChange={setNotas} 
+            isForeign={esForaneo} 
+            isValid={isNotesValid} 
+          />
 
         </ScrollView>
 
@@ -204,9 +142,13 @@ export default function NuevaInfraccionView() {
             disabled={!esFormularioValido}
             onPress={finalizarBoleta}
           >
-            <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
-              {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
-            </Text>
+            {enviando ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={[styles.mainBtnText, !esFormularioValido && styles.mainBtnTextDisabled]}>
+                {esFormularioValido ? 'GENERAR BOLETA' : 'CAPTURAR DATOS'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -223,24 +165,10 @@ const styles = StyleSheet.create({
   headerTitle: { color: 'white', fontWeight: 'bold', fontSize: 14, letterSpacing: 1 },
   
   scrollContent: { padding: 16, paddingBottom: 120 },
-  card: { backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 16, elevation: 2 },
-  cardRow: { backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionLabel: { color: '#691C32', fontWeight: '900', fontSize: 11, marginBottom: 16, letterSpacing: 1 },
   
-  rowLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151' },
-  switch: { width: 48, height: 24, backgroundColor: '#e5e7eb', borderRadius: 12, padding: 2 },
-  switchOn: { backgroundColor: '#691C32' },
-  switchDot: { width: 20, height: 20, backgroundColor: 'white', borderRadius: 10 },
-  switchDotOn: { alignSelf: 'flex-end' },
-
-  ubiHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  ubiInput: { fontSize: 12, fontWeight: 'bold', color: '#4b5563', backgroundColor: '#f9fafb', borderRadius: 12, padding: 12 },
-  ubiIconBtn: { width: 48, height: 48, backgroundColor: '#f9fafb', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  ubiIcon: { width: 30, height: 30 },
-
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'white' },
   mainBtn: { backgroundColor: '#691C32', paddingVertical: 18, borderRadius: 16, alignItems: 'center', elevation: 8 },
   mainBtnDisabled: { backgroundColor: '#e5e7eb', elevation: 0 },
   mainBtnText: { color: 'white', fontWeight: '900', letterSpacing: 2, fontSize: 14 },
-  mainBtnTextDisabled: { color: '#9ca3af' }
+  mainBtnTextDisabled: { color: '#9ca3af' },
 });
