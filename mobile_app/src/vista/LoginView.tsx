@@ -38,6 +38,8 @@ export default function LoginView() {
     try {
       const data = await signIn({ username:placa, password });
       
+      console.log("Data antes del manejo de la primera vez" ,data);
+
 
       if (data.primer_ingreso) {
         setShowFirstLoginModal(true);

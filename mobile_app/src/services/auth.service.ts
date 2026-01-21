@@ -20,6 +20,7 @@ interface DecodedToken {
     id_usuario: string;
     username: string;
     sector?: string;
+    primer_ingreso?: boolean;
     iat?: number;
     exp?: number;
 }
@@ -70,7 +71,7 @@ export const authService = {
                 name: decoded.username || "Oficial",
                 sector: decoded.sector || "SECTOR CDMX",
                 token: data.token,
-                primer_ingreso: data.primer_ingreso
+                primer_ingreso: decoded.primer_ingreso
             };
 
             console.log('Data user: \n', JSON.stringify(decoded, null, 2 ))
