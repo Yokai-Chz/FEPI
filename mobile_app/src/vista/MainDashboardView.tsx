@@ -30,11 +30,16 @@ import { useAuth } from '../context/AuthContext';
 import { globalStyles } from '../styles/globalStyles';
 
 
+import { useInfraccion } from '../context/InfraccionContext';
+
+
 export default function MainDashboardView() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { notificaciones, limpiarNotificaciones } = useInfraccion();
 
   const handleSignOut = () => {
+    // ... código existente de signout ...
     Alert.alert(
       "Cerrar Sesión",
       "¿Está seguro que desea finalizar su turno?",
@@ -54,6 +59,22 @@ export default function MainDashboardView() {
       ]
     );
   };
+
+  const handleShowNotifications = () => {
+    if (notificaciones.length === 0) {
+      Alert.alert("Avisos", "No hay notificaciones nuevas");
+      return;
+    }
+
+    Alert.alert(
+      "Centro de Notificaciones",
+      notificaciones.join('\n\n'),
+      [
+        { text: "Cerrar", style: "cancel" },
+        { text: "Limpiar", onPress: limpiarNotificaciones }
+      ]
+    );
+  };
   
   return (
     <SafeAreaView style={styles.container}>
@@ -69,8 +90,13 @@ export default function MainDashboardView() {
           </View>
         </View>
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.headerIconBtn}>
-            <Bell size={20} color={COLORS.warning} />
+          <TouchableOpacity style={styles.headerIconBtn} onPress={handleShowNotifications}>
+            <View>
+              <Bell size={20} color={COLORS.warning} />
+              {notificaciones.length > 0 && (
+                <View style={styles.badge} />
+              )}
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIconBtn} onPress={handleSignOut}>
             <LogOut size={20} color="white" />
@@ -223,6 +249,17 @@ const styles = StyleSheet.create({
   headerSubtitle: { color: 'white', fontSize: 8, opacity: 0.8, fontWeight: 'bold' },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   headerIconBtn: { padding: 4 },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: COLORS.error,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: COLORS.primary
+  },
   
   scrollContent: { padding: SPACING.lg, paddingBottom: 100 },
   

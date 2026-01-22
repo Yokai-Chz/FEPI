@@ -103,7 +103,38 @@ export const createSolicitud = async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // 1. Obtener Depósitos Activos y sus Ubicaciones
+        // --- PASO 1: ENCONTRAR GRÚA MÁS CERCANA ---
+        // Buscamos grúas disponibles con su ubicación actual
+        const queryGruas = `
+            SELECT id_grua, placas, latitud_actual, longitud_actual 
+            FROM gruas 
+            WHERE estado = 'DISPONIBLE' 
+              AND latitud_actual IS NOT NULL 
+              AND longitud_actual IS NOT NULL
+        `;
+        const resGruas = await client.query(queryGruas);
+        
+        let assignedGrua = null;
+        let minDistGrua = Infinity;
+
+        for (const grua of resGruas.rows) {
+            const dist = getDistanceFromLatLonInKm(
+                latitud, longitud, 
+                parseFloat(grua.latitud_actual), parseFloat(grua.longitud_actual)
+            );
+            if (dist < minDistGrua) {
+                minDistGrua = dist;
+                assignedGrua = grua;
+            }
+        }
+
+        if (!assignedGrua) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: "No hay grúas disponibles con ubicación reportada." });
+        }
+
+
+        // --- PASO 2: ENCONTRAR DEPÓSITO MÁS CERCANO (CON CUPO) ---
         const queryDepositos = `
             SELECT d.id_deposito, d.nombre, d.capacidad_total, d.capacidad_ocupada, d.horario_atencion,
                    u.coordenadas
@@ -112,57 +143,33 @@ export const createSolicitud = async (req, res) => {
             WHERE d.estatus = true
         `;
         const resDepositos = await client.query(queryDepositos);
-        let candidates = [];
+        
+        let assignedDepot = null;
+        let minDistDepot = Infinity;
 
-        // 2. Filtrar y Calcular distancias
         for (const depot of resDepositos.rows) {
             // Validar capacidad
             if (depot.capacidad_ocupada >= depot.capacidad_total) continue;
-
             // Validar horario
             if (!isDepotOpen(depot.horario_atencion)) continue;
 
-            // Calcular distancia
             if (depot.coordenadas) {
                 const [dLat, dLon] = depot.coordenadas.split(',').map(c => parseFloat(c.trim()));
                 const dist = getDistanceFromLatLonInKm(latitud, longitud, dLat, dLon);
                 
-                candidates.push({ ...depot, distance: dist });
+                if (dist < minDistDepot) {
+                    minDistDepot = dist;
+                    assignedDepot = depot;
+                }
             }
         }
 
-        // Ordenar por distancia (menor a mayor)
-        candidates.sort((a, b) => a.distance - b.distance);
-
-        let assignedGrua = null;
-        let assignedDepot = null;
-
-        // 3. Buscar Grúa Disponible en el depósito más cercano
-        for (const depot of candidates) {
-            const queryGrua = `
-                SELECT g.id_grua, g.placas 
-                FROM gruas g
-                JOIN asociacion_grua_deposito agd ON g.id_grua = agd.id_grua
-                WHERE agd.id_deposito = $1 
-                  AND g.estado = 'DISPONIBLE'
-                  AND agd.activo = true
-                LIMIT 1
-            `;
-            const resGrua = await client.query(queryGrua, [depot.id_deposito]);
-            
-            if (resGrua.rows.length > 0) {
-                assignedGrua = resGrua.rows[0];
-                assignedDepot = depot;
-                break; // Encontramos el par (Depósito Cercano - Grúa Disponible)
-            }
-        }
-
-        if (!assignedGrua || !assignedDepot) {
+        if (!assignedDepot) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: "No hay grúas disponibles cercanas o los depósitos están llenos/cerrados." });
+            return res.status(404).json({ error: "No hay depósitos cercanos disponibles o están llenos/cerrados." });
         }
 
-        // 4. Crear Ubicación de Origen para el registro
+        // --- PASO 3: CREAR REGISTROS ---
         const queryUbi = `
             INSERT INTO ubicacion (
                 vialidad, numero_exterior, nombre_asentamiento, codigo_postal, 
@@ -216,8 +223,9 @@ export const createSolicitud = async (req, res) => {
             solicitud: resSolicitud.rows[0],
             asignacion: {
                 deposito: assignedDepot.nombre,
-                distancia_km: assignedDepot.distance.toFixed(2),
+                distancia_deposito_km: minDistDepot.toFixed(2),
                 grua: assignedGrua.placas,
+                distancia_grua_km: minDistGrua.toFixed(2),
                 ubicacion_origen: ubicacionDetails
             }
         });

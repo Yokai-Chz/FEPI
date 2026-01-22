@@ -23,9 +23,6 @@ export const infraccionesService = {
 
   // Envío real al servidor
   async sendToServer(data: any, token: string) {
-    // SIMULACIÓN: En lugar de Base64, enviamos URLs simuladas
-    // En producción, aquí se subirían las imágenes a un Storage (S3, Cloudinary)
-    // y se obtendrían sus URLs públicas.
     const evidenciasSimuladas = data.evidencias.map((uri: string, index: number) => {
         const nombreArchivo = uri.split('/').pop() || `evidencia_${index}.jpg`;
         return `https://storage.cdmx.gob.mx/multas/${data.placa}/${new Date().getTime()}_${nombreArchivo}`;
@@ -36,8 +33,6 @@ export const infraccionesService = {
       evidencias: evidenciasSimuladas
     };
 
-    console.log('Data infraccion: \n', JSON.stringify(payload, null, 2))
-
     const response = await fetch(`${API_CONFIG.BASE_URL}/infracciones`, {
       method: 'POST',
       headers: getAuthHeader(token),
@@ -46,35 +41,46 @@ export const infraccionesService = {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error enviando infracción:', response.status, errorText);
+      let errorMessage = "Error del servidor";
       try {
           const errorData = JSON.parse(errorText);
-          throw new Error(errorData.message || `Error del servidor: ${response.status}`);
-      } catch (e) {
-          throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-      }
+          errorMessage = errorData.message || errorData.mensaje || errorMessage;
+      } catch (e) {}
+
+      // Lanzamos un error que incluya el status
+      const error: any = new Error(errorMessage);
+      error.status = response.status;
+      throw error;
     }
 
     return await response.json();
   },
 
   // Proceso de sincronización de pendientes
-  async syncOfflineData(token: string) {
+  async syncOfflineData(token: string): Promise<{synced: number, failed: string[]}> {
     const queue = await storageService.getQueue();
-    if (queue.length === 0) return;
+    if (queue.length === 0) return { synced: 0, failed: [] };
 
-    console.log(`Sincronizando ${queue.length} multas pendientes...`);
+    let syncedCount = 0;
+    let failedMessages: string[] = [];
     
     for (const item of queue) {
       try {
-        // Quitamos metadata local antes de enviar
         const { id_local, intentos, ...serverData } = item;
         await this.sendToServer(serverData, token);
         await storageService.removeFromQueue(id_local);
-        console.log(`Sincronizado: ${id_local}`);
-      } catch (e) {
+        syncedCount++;
+      } catch (e: any) {
         console.error(`Error sincronizando ${item.id_local}:`, e);
+        
+        // Si es un error 400-499 es un error FATAL de datos (ej. placa no existe)
+        // No tiene sentido reintentar, lo borramos de la cola pero avisamos
+        if (e.status >= 400 && e.status < 500) {
+            await storageService.removeFromQueue(item.id_local);
+            failedMessages.push(`Multa descartada (${item.placa}): ${e.message}`);
+        }
       }
     }
+    return { synced: syncedCount, failed: failedMessages };
   }
 };
