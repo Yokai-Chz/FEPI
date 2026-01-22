@@ -12,17 +12,19 @@ import {
   Platform,
   Switch
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Check, Truck, Car, Bike, Bus } from 'lucide-react-native';
 
 import VehiclePlateInput from '../../components/infraccion/VehiclePlateInput';
 
 export default function DetallesVehiculoView() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const motivoInicial = (params.motivo as string) || "";
 
   // --- ESTADOS ---
   const [datosVehiculo, setDatosVehiculo] = useState({
-    placa: "",
+    placa: (params.placa as string) || "",
     marcaModelo: "",
     color: "",
     tipo: "COMPACTO", // COMPACTO, SUV, MOTO, PESADO
@@ -64,7 +66,8 @@ export default function DetallesVehiculoView() {
           ...datosVehiculo,
           esForaneo, // Pasamos el dato de foráneo
           inventario,
-          observaciones
+          observaciones,
+          motivo: motivoInicial // Pasamos el motivo original
         })
       }
     });

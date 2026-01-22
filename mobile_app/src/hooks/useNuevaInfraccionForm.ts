@@ -143,7 +143,8 @@ export const useNuevaInfraccionForm = () => {
         evidencias: evidenciasArray
       };
 
-      await infraccionesService.crearInfraccion(dataToSend, user?.token || "");
+      const result = await infraccionesService.crearInfraccion(dataToSend, user?.token || "");
+      const isOffline = typeof result === 'string';
 
       // Verificar si amerita grúa
       const ameritaGrua = articulosSeleccionados.some(a => ARTICULOS_CORRALON.includes(a.id));
@@ -151,7 +152,9 @@ export const useNuevaInfraccionForm = () => {
       if (ameritaGrua) {
         Alert.alert(
             "Infracción Registrada",
-            "La infracción incluye motivos que ameritan remisión al depósito. ¿Desea solicitar una grúa ahora?",
+            isOffline 
+              ? "La infracción se guardó en MODO OFFLINE.\nEsta incluye motivos de corralón. ¿Desea solicitar una grúa?"
+              : "La infracción incluye motivos que ameritan remisión al depósito. ¿Desea solicitar una grúa ahora?",
             [
                 {
                     text: "No, finalizar",
@@ -182,7 +185,9 @@ export const useNuevaInfraccionForm = () => {
       } else {
           Alert.alert(
             "Éxito", 
-            `✅ Infracción registrada.\n${!coordenadas ? '(Guardada localmente por falta de conexión)' : ''}`,
+            isOffline 
+              ? "✅ Infracción guardada en MODO OFFLINE.\nSe sincronizará automáticamente cuando recupere la conexión."
+              : "✅ Infracción registrada exitosamente en el servidor.",
             [{ 
               text: "Terminar", 
               onPress: () => {

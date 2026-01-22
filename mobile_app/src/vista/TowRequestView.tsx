@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, View, Text, TouchableOpacity, 
-  SafeAreaView, ScrollView, Alert, ActivityIndicator, TextInput 
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
-import { MapPin, X, ShieldAlert, CheckCircle, Navigation } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CheckCircle, ShieldAlert, X } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView, ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
 import LocationInput from '../../components/infraccion/LocationInput';
@@ -24,7 +30,7 @@ export default function TowRequestView() {
   const direccionInicial = params.direccion as string || "Obteniendo ubicación...";
 
   // Folio de la infracción previamente creada (Ligado)
-  const FOLIO_INFRACCION = "INF-RECIENTE"; 
+  const FOLIO_INFRACCION = "0001"; 
 
   // --- ESTADOS ---
   const [ubicacion, setUbicacion] = useState<{
@@ -98,14 +104,19 @@ export default function TowRequestView() {
     setEnviando(true);
     
     try {
+      // Parsear los datos del vehículo recibidos
+      const infoVehiculo = params.vehiculo ? JSON.parse(params.vehiculo as string) : {};
+
       const payload: PeticionArrastre = {
-        id_agente: user?.id || "ANONYMOUS",
-        coordenadas: {
-          lat: ubicacion.lat,
-          lng: ubicacion.lng
-        },
-        referencia_manual: referencia,
-        detalles_vehiculo: vehiculoData
+        latitud: ubicacion.lat,
+        longitud: ubicacion.lng,
+        placas_vehiculo: infoVehiculo.placa || placaInicial,
+        marca_vehiculo: infoVehiculo.marcaModelo || "No especificada",
+        color_vehiculo: infoVehiculo.color || "No especificado",
+        tipo_vehiculo: infoVehiculo.tipo || "COMPACTO",
+        motivo_arrastre: infoVehiculo.motivo || "Obstrucción de entrada", 
+        id_infraccion_vinculada: FOLIO_INFRACCION, 
+        observaciones: `${referencia}. ${infoVehiculo.observaciones || ''}`.trim()
       };
 
       const respuesta = await gruasService.solicitarServicio(payload);
@@ -124,22 +135,26 @@ export default function TowRequestView() {
         <View style={styles.successContent}>
           <CheckCircle size={80} color="#16a34a" />
           <Text style={styles.successTitle}>GRÚA SOLICITADA</Text>
-          <Text style={styles.successFolio}>FOLIO: {servicioConfirmado.folio_servicio}</Text>
+          <Text style={styles.successFolio}>FOLIO: {servicioConfirmado.solicitud.folio}</Text>
           
           <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>ASIGNACIÓN DEL SERVIDOR</Text>
-            <Text style={styles.infoValue}>{servicioConfirmado.deposito_asignado}</Text>
+            <Text style={styles.infoLabel}>DEPÓSITO DE DESTINO</Text>
+            <Text style={styles.infoValue}>{servicioConfirmado.asignacion.deposito}</Text>
+            <Text style={styles.distText}>A {servicioConfirmado.asignacion.distancia_deposito_km} km de distancia</Text>
+            
             <View style={styles.divider} />
+            
             <View style={styles.rowInfo}>
               <View>
                 <Text style={styles.infoLabel}>UNIDAD ASIGNADA</Text>
-                <Text style={styles.infoValue}>{servicioConfirmado.unidad_asignada}</Text>
+                <Text style={styles.infoValue}>{servicioConfirmado.asignacion.grua}</Text>
               </View>
               <View style={{alignItems: 'flex-end'}}>
-                <Text style={styles.infoLabel}>ETA</Text>
-                <Text style={styles.infoValue}>{servicioConfirmado.tiempo_estimado}</Text>
+                <Text style={styles.infoLabel}>DISTANCIA DE APOYO</Text>
+                <Text style={styles.infoValue}>{servicioConfirmado.asignacion.distancia_grua_km} KM</Text>
               </View>
             </View>
+            <Text style={styles.estatusBadge}>{servicioConfirmado.solicitud.estatus_servicio}</Text>
           </View>
 
           <TouchableOpacity 
@@ -241,6 +256,18 @@ const styles = StyleSheet.create({
   infoCard: { width: '100%', backgroundColor: 'white', borderRadius: 20, padding: 24, elevation: 4, marginBottom: 30 },
   infoLabel: { fontSize: 9, fontWeight: 'bold', color: '#9ca3af', marginBottom: 4 },
   infoValue: { fontSize: 16, fontWeight: '900', color: '#1f2937', marginBottom: 16 },
+  distText: { fontSize: 11, color: '#6b7280', marginTop: -12, marginBottom: 16, fontWeight: '600' },
+  estatusBadge: { 
+    alignSelf: 'flex-start', 
+    backgroundColor: '#dcfce7', 
+    color: '#166534', 
+    paddingHorizontal: 12, 
+    paddingVertical: 4, 
+    borderRadius: 12, 
+    fontSize: 10, 
+    fontWeight: '900',
+    marginTop: 10
+  },
   divider: { height: 1, backgroundColor: '#f3f4f6', marginBottom: 16 },
   rowInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
