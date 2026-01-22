@@ -1,0 +1,39 @@
+services:
+  db:
+    build:
+      context: ./base_datos
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=postgres
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_HOST=db
+      - DB_NAME=postgres
+      - DB_PORT=5432
+      # Si tienes una API Key en tu .env local, asegúrate de pasarla o descomentar la línea de abajo y crear un .env
+      # - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  postgres_data:

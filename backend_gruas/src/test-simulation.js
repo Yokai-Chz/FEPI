@@ -3,29 +3,17 @@ import { PORT } from './config.js';
 
 const SERVER_URL = `http://localhost:${PORT || 3000}`;
 
-// El JSON exacto que definiste
+// El JSON ajustado a lo que el controlador realmente espera
 const payload = {
-  "id_agente": "982734",
-  "coordenadas": {
-    "lat": 19.3647, // Coordenada cercana a Santa Fe (uno de los depósitos con lat/lng en BD) para asegurar éxito
-    "lng": -99.2743
-  },
-  "referencia_manual": "Prueba automática de inicio",
-  "detalles_vehiculo": {
-    "placa": "TEST-001",
-    "marcaModelo": "NISSAN",
-    "color": "ROJO",
-    "tipo": "COMPACTO", // Esto detonará la búsqueda de Grúa Tipo A
-    "tieneLlaves": false,
-    "esForaneo": false,
-    "inventario": {
-      "cristalesRotos": false,
-      "sinLlantas": false,
-      "objetosValor": true,
-      "golpesCarroceria": false
-    },
-    "observaciones": "Solicitud generada por test automático"
-  }
+  "latitud": 19.3625,
+  "longitud": -99.1628,
+  "placas_vehiculo": "TEST-001",
+  "marca_vehiculo": "NISSAN",
+  "color_vehiculo": "ROJO",
+  "tipo_vehiculo": "Sedan",
+  "motivo_arrastre": "Prueba automática de inicio",
+  "id_infraccion_vinculada": 123,
+  "observaciones": "Solicitud generada por test automático"
 };
 
 async function runTest() {
@@ -43,27 +31,26 @@ async function runTest() {
             console.error(`❌ Fallo conexión raíz: ${e.message}`);
         }
 
-        console.log(`\n📡 Enviando POST a: ${SERVER_URL}/solicitudes-debug`);
+        console.log(`\n📡 Enviando POST a: ${SERVER_URL}/solicitudes`);
         const start = Date.now();
-        const response = await axios.post(`${SERVER_URL}/solicitudes-debug`, payload);
+        const response = await axios.post(`${SERVER_URL}/solicitudes`, payload);
         const duration = Date.now() - start;
 
         console.log(`✅ Petición exitosa en ${duration}ms`);
         console.log('\n📩 RESPUESTA DEL SERVIDOR:');
         console.log(JSON.stringify(response.data, null, 2));
 
-        // Validación de la interfaz RespuestaServidorGrua
+        // Validación de la respuesta
         const data = response.data;
         const validacion = 
-            data.folio_servicio && 
-            data.deposito_asignado && 
-            data.unidad_asignada && 
-            data.tiempo_estimado && 
-            data.estatus;
+            data.solicitud && 
+            data.asignacion && 
+            data.asignacion.deposito && 
+            data.asignacion.grua;
 
-        console.log('\n🧐 VALIDACIÓN DE INTERFAZ:');
+        console.log('\n🧐 VALIDACIÓN DE RESPUESTA:');
         if (validacion) {
-            console.log('✅ PASS: La respuesta cumple con "RespuestaServidorGrua"');
+            console.log('✅ PASS: La respuesta contiene solicitud y asignación.');
         } else {
             console.log('❌ FAIL: La respuesta NO cumple con la estructura esperada.');
         }
