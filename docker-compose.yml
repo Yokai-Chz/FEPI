@@ -55,7 +55,29 @@ services:
     networks:
       - fepi-net
 
-  # --- BASE DE DATOS ---
+  # --- BACKEND GRUAS ---
+  backend-gruas:
+    build:
+      context: ./backend_gruas
+      dockerfile: Dockerfile
+    container_name: backend-gruas
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_HOST=postgres_db_gruas
+      - DB_NAME=postgres
+      - DB_PORT=5432
+    networks:
+      - fepi-net
+    depends_on:
+      db_gruas:
+        condition: service_healthy
+    restart: on-failure
+
+  # --- BASE DE DATOS PRINCIPAL ---
   db:
     build:
       context: ./shared_dtos/datos/container 
@@ -79,9 +101,33 @@ services:
       timeout: 5s     
       retries: 5     
 
+  # --- BASE DE DATOS GRUAS ---
+  db_gruas:
+    build:
+      context: ./backend_gruas/base_datos
+      dockerfile: Dockerfile
+    container_name: postgres_db_gruas
+    restart: always
+    ports:
+      - "5431:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data_gruas:/var/lib/postgresql/data
+    networks:
+      - fepi-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 networks:
   fepi-net:
     driver: bridge
 
 volumes:
   postgres_data:
+  postgres_data_gruas:
