@@ -46,6 +46,9 @@ export default function NuevaInfraccionView() {
     cargandoUbicacion,
     esFormularioValido,
     isNotesValid,
+    verificandoPlaca,
+    tieneReporteRobo,
+    totalAdeudos,
     obtenerUbicacionActual,
     agregarArticulo,
     removerArticulo,
@@ -82,6 +85,9 @@ export default function NuevaInfraccionView() {
             onChange={setPlaca} 
             isForeign={esForaneo}
             onForeignChange={setEsForaneo}
+            tieneReporteRobo={tieneReporteRobo}
+            totalAdeudos={totalAdeudos}
+            verificandoPlaca={verificandoPlaca}
           />
 
           {/* IDENTIFICACIÓN ADICIONAL */}

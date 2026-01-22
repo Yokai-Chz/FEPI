@@ -42,14 +42,14 @@ def populate_initial_data():
                       VALUES (?, ?, ?, ?, ?, ?)''',
                    ("ROB-666", True, "CON REPORTE DE ROBO", "Fiscalía CDMX", "2024-01-15", "CI-FCY/OY/UI-1S/D/0001"))
 
-    # --- 2. Random Data Generation (150 vehicles) ---
-    print("Generating 10 random vehicles (Autos, Motos, Camiones)...")
+    # --- 2. Random Data Generation (20 vehicles) ---
+    print("Generating 20 random vehicles (Autos, Motos, Camiones)...")
     
     states_list = list(utils.STATE_SERIES_AUTO.keys())
     
-    for _ in range(10):
-        # Determine State (50% CDMX, 50% Others)
-        if random.random() < 0.5:
+    for _ in range(20):
+        # Determine State (60% CDMX, 40% Others to ensure more CDMX examples)
+        if random.random() < 0.6:
             state = "CDMX"
         else:
             state = random.choice(states_list)
@@ -86,9 +86,29 @@ def populate_initial_data():
         cursor.execute("INSERT OR IGNORE INTO tarjetas_circulacion (folio, placa, rfc_propietario, vigencia, estatus) VALUES (?, ?, ?, ?, ?)",
                        (tc_data["folio"], placa, rfc, tc_data["vigencia"], tc_data["estatus"]))
         
-        # Insert Robo Status (Mostly clean)
-        cursor.execute("INSERT OR IGNORE INTO reportes_robo (placa, tiene_reporte, mensaje) VALUES (?, ?, ?)",
-                       (placa, False, "SIN REPORTE DE ROBO"))
+        # --- Generate Stolen Status (20% chance for any vehicle, higher if CDMX just for variety) ---
+        is_stolen = random.random() < 0.25 # 25% chance of being stolen
+        
+        if is_stolen:
+            # Stolen Vehicle Data
+            mensaje = "CON REPORTE DE ROBO"
+            entidad_robo = "Fiscalía CDMX" if state == "CDMX" else f"Fiscalía {state}"
+            fecha_robo = fake.date_between(start_date='-1y', end_date='today').strftime('%Y-%m-%d')
+            folio_robo = f"CI-{fake.bothify(text='????/##/##-##')}"
+            
+            cursor.execute('''INSERT OR IGNORE INTO reportes_robo 
+                              (placa, tiene_reporte, mensaje, entidad, fecha_averiguacion, folio_reporte) 
+                              VALUES (?, ?, ?, ?, ?, ?)''',
+                           (placa, True, mensaje, entidad_robo, fecha_robo, folio_robo))
+            
+            # If stolen, maybe the TC is also expired or invalid? Let's keep it random or force it.
+            # Let's force TC status to 'ROBADA' or 'VENCIDA' for realism
+            cursor.execute("UPDATE tarjetas_circulacion SET estatus = 'SUSPENDIDA' WHERE placa = ?", (placa,))
+            
+        else:
+            # Clean Vehicle
+            cursor.execute("INSERT OR IGNORE INTO reportes_robo (placa, tiene_reporte, mensaje) VALUES (?, ?, ?)",
+                           (placa, False, "SIN REPORTE DE ROBO"))
         
         # --- 3. Infracciones de prueba para la Web Admin ---
         print("Generating sample infractions...")

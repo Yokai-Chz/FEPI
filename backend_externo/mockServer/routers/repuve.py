@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 import sys
 import os
 
@@ -12,12 +12,12 @@ router = APIRouter(prefix="/api/repuve", tags=["REPUVE"])
 class IdentificacionVehicular(BaseModel):
     placa: str
     niv: str
-    nci: str
+    nci: Optional[str] = None
     marca: str
     modelo: str
     anio_modelo: int
-    clase: str
-    tipo: str
+    clase: Optional[str] = None
+    tipo: Optional[str] = None
     numero_puertas: Optional[int] = None
     pais_origen: Optional[str] = None
 
@@ -40,6 +40,63 @@ class EstatusLegal(BaseModel):
 class RepuveResponse(BaseModel):
     identificacion_vehicular: IdentificacionVehicular
     estatus_legal: EstatusLegal
+
+@router.get("/all", response_model=List[RepuveResponse])
+async def obtener_todos_repuve():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = '''
+        SELECT v.*, r.tiene_reporte, r.mensaje, r.entidad, r.fecha_averiguacion, r.folio_reporte
+        FROM vehiculos v
+        LEFT JOIN reportes_robo r ON v.placa = r.placa
+    '''
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    resultados = []
+    
+    for row in rows:
+        identificacion = {
+            "placa": row["placa"],
+            "niv": row["niv"],
+            "nci": row["nci"],
+            "marca": row["marca"],
+            "modelo": row["modelo"],
+            "anio_modelo": row["anio"],
+            "clase": row["clase"],
+            "tipo": row["tipo_vehiculo"],
+            "numero_puertas": row["num_puertas"],
+            "pais_origen": row["pais_origen"]
+        }
+        
+        # Handle None for tiene_reporte
+        tiene_robo = bool(row["tiene_reporte"])
+        
+        estatus = {
+            "tiene_reporte_robo": tiene_robo,
+            "mensaje": row["mensaje"] if row["mensaje"] else "SIN REPORTE DE ROBO"
+        }
+        
+        if tiene_robo:
+            estatus["fuentes_reporte"] = {
+                "fgj": {
+                    "activo": True,
+                    "entidad": row["entidad"],
+                    "fecha_averiguacion": row["fecha_averiguacion"],
+                    "folio": row["folio_reporte"]
+                },
+                "ocra": {"activo": False},
+                "extranjero": {"activo": False}
+            }
+        
+        resultados.append({
+            "identificacion_vehicular": identificacion,
+            "estatus_legal": estatus
+        })
+        
+    return resultados
 
 @router.get("/consulta/{placa}", response_model=RepuveResponse)
 async def consultar_repuve(placa: str):

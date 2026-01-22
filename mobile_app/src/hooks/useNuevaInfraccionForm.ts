@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
 import { useInfraccion } from '../context/InfraccionContext';
 import { infraccionesService } from '../services/infracciones.service';
+import { vehiculosService } from '../services/vehiculos.service';
 import { isValidCDMXPlate } from '../utils/plateValidation';
 import { InfractionArticle } from '../../components/infraccion/InfractionSelector';
 
@@ -41,6 +42,11 @@ export const useNuevaInfraccionForm = () => {
 
   const [esComercial, setEsComercial] = useState(false);
 
+  // --- ESTADOS DE VALIDACIÓN VEHICULAR ---
+  const [verificandoPlaca, setVerificandoPlaca] = useState(false);
+  const [tieneReporteRobo, setTieneReporteRobo] = useState(false);
+  const [totalAdeudos, setTotalAdeudos] = useState(0);
+
   // --- VALIDACIÓN ---
   const isPlateValid = esForaneo ? placa.length >= 3 : isValidCDMXPlate(placa);
   const isNotesValid = esForaneo ? notas.trim().length > 3 : true;
@@ -50,6 +56,7 @@ export const useNuevaInfraccionForm = () => {
   const esFormularioValido = 
     !enviando &&
     isPlateValid &&
+    !tieneReporteRobo && // Bloqueamos si tiene reporte de robo
     isNotesValid &&
     isNivValid &&
     isLicenciaValid &&
@@ -60,6 +67,41 @@ export const useNuevaInfraccionForm = () => {
   useEffect(() => {
     obtenerUbicacionActual();
   }, []);
+
+  // Efecto para consultar API de Vehículos cuando la placa es válida
+  useEffect(() => {
+    const verificarPlaca = async () => {
+      // Reseteamos alertas al cambiar la placa
+      setTieneReporteRobo(false);
+      setTotalAdeudos(0);
+
+      if (!isPlateValid || !user?.token) return;
+
+      setVerificandoPlaca(true);
+      try {
+        const info = await vehiculosService.getVehiculoPorPlaca(placa, user.token);
+        
+        if (info) {
+          setTieneReporteRobo(info.tieneReporteRobo);
+          setTotalAdeudos(info.montoTotalAdeudos || 0);
+
+          if (info.tieneReporteRobo) {
+            Alert.alert("⚠️ ALERTA DE ROBO", `El vehículo con placa ${placa} tiene reporte de robo activo.`);
+          }
+        }
+      } catch (error) {
+        console.log("Error verificando placa:", error);
+        // No bloqueamos el flujo si falla la consulta, solo logueamos
+      } finally {
+        setVerificandoPlaca(false);
+      }
+    };
+
+    // Debounce simple: esperamos 500ms después de que el usuario deje de escribir
+    const timeoutId = setTimeout(verificarPlaca, 800);
+    return () => clearTimeout(timeoutId);
+
+  }, [placa, esForaneo, user]);
 
   // --- FUNCIONES ---
   const obtenerUbicacionActual = async () => {
@@ -224,6 +266,9 @@ export const useNuevaInfraccionForm = () => {
     cargandoUbicacion,
     esFormularioValido,
     isNotesValid,
+    verificandoPlaca,
+    tieneReporteRobo,
+    totalAdeudos,
 
     // Acciones
     obtenerUbicacionActual,
